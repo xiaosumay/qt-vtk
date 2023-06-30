@@ -9,5 +9,20 @@
         <source>TestVtk</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <location filename="../src/testvtk.ui" line="25"/>
+        <source>open</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/testvtk.cpp" line="42"/>
+        <source>open image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/testvtk.cpp" line="44"/>
+        <source>JPEG image file(*.jpg *.jpeg)</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 </TS>
