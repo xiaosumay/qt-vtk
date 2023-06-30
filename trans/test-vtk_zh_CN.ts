@@ -5,23 +5,17 @@
     <name>TestVtk</name>
     <message>
         <location filename="../src/testvtk.ui" line="14"/>
-        <location filename="../cmake-build-relwithdebinfo-amd64/test-vtk_autogen/include/ui_testvtk.h" line="35"/>
         <source>TestVtk</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/testvtk.ui" line="25"/>
-        <source>open</source>
+        <location filename="../src/testvtk.ui" line="42"/>
+        <source>asc</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <location filename="../src/testvtk.cpp" line="42"/>
-        <source>open image</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <location filename="../src/testvtk.cpp" line="44"/>
-        <source>JPEG image file(*.jpg *.jpeg)</source>
+        <location filename="../src/testvtk.ui" line="49"/>
+        <source>desc</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

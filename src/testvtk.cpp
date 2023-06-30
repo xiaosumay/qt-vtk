@@ -1,12 +1,16 @@
 #include "testvtk.h"
 #include "ui_testvtk.h"
 
-#include "vtkGenericOpenGLRenderWindow.h"
-#include "vtkRenderer.h"
-#include "vtkImageViewer2.h"
-#include "QVTKOpenGLNativeWidget.h"
-#include "vtkJPEGReader.h"
-#include "vtkImageActor.h"
+#include <vtkActor.h>
+#include <vtkGenericOpenGLRenderWindow.h>
+#include <vtkRenderer.h>
+#include <vtkCylinderSource.h>
+#include <vtkPolyDataMapper.h>
+#include <vtkRenderWindowInteractor.h>
+#include <vtkInteractorStyleTrackballCamera.h>
+#include <vtkProperty.h>
+#include <vtkLight.h>
+#include <vtkCamera.h>
 
 #include <QFileDialog>
 #include <QDebug>
@@ -18,15 +22,34 @@ TestVtk::TestVtk(QWidget *parent)
 {
     ui->setupUi(this);
 
-    m_renderer = vtkSmartPointer<vtkRenderer>::New();
+    m_cylinderActor = vtkSmartPointer<vtkActor>::New();
 
-    m_imageViewer = vtkSmartPointer<vtkImageViewer2>::New();
-    m_imageViewer->SetRenderer(m_renderer);
-    m_imageViewer->SetRenderWindow(ui->vtkWidget->renderWindow());
-    m_imageViewer->SetupInteractor(ui->vtkWidget->renderWindow()->GetInteractor());
+    m_cylinderSource = vtkSmartPointer<vtkCylinderSource>::New();
+    m_cylinderSource->SetHeight(3.0);
+    m_cylinderSource->SetRadius(1.0);
+    m_cylinderSource->SetResolution(3);
+
+    m_polyDataMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    m_polyDataMapper->SetInputConnection(m_cylinderSource->GetOutputPort());
+    m_cylinderActor->SetMapper(m_polyDataMapper);
+
+    m_renderer = vtkSmartPointer<vtkRenderer>::New();
+    m_renderer->AddActor(m_cylinderActor);
+    m_renderer->SetBackground(0.1, 0.2, 0.4);
 
     m_renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
     m_renderWindow->AddRenderer(m_renderer);
+
+    auto iren = ui->vtkWidget->interactor();
+
+    m_style = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
+    iren->SetInteractorStyle(m_style);
+
+    vtkSmartPointer<vtkLight> myLight = vtkSmartPointer<vtkLight>::New();
+    myLight->SetColor(1, 0, 0);
+    myLight->SetPosition(0, 0, 1);
+    myLight->SetFocalPoint(m_renderer->GetActiveCamera()->GetFocalPoint());
+    m_renderer->AddLight(myLight);
 
     ui->vtkWidget->setRenderWindow(m_renderWindow);
 }
@@ -36,29 +59,16 @@ TestVtk::~TestVtk()
     delete ui;
 }
 
-void TestVtk::on_open_clicked()
+void TestVtk::on_asc_clicked()
 {
-    QString filename = QFileDialog::getOpenFileName(this,
-        tr("open image"),
-        QStandardPaths::standardLocations(QStandardPaths::PicturesLocation).at(0),
-        tr("JPEG image file(*.jpg *.jpeg)"));
+    m_cylinderSource->SetResolution(m_cylinderSource->GetResolution() + 1);
 
-    if (filename.isEmpty()) return;
+    ui->vtkWidget->renderWindow()->Render();
+}
 
-    const char *image_path = filename.toLocal8Bit().data();
-
-    vtkSmartPointer<vtkJPEGReader> reader = vtkSmartPointer<vtkJPEGReader>::New();
-    reader->SetFileName(image_path);
-    reader->Update();
-
-    m_imageViewer->SetInputData(reader->GetOutput());
-    m_imageViewer->UpdateDisplayExtent();
-
-    m_imageViewer->SetSliceOrientationToXY();
-    m_imageViewer->GetImageActor()->InterpolateOff();
-
-    m_renderer->ResetCamera();
-    m_renderer->DrawOn();
+void TestVtk::on_desc_clicked()
+{
+    m_cylinderSource->SetResolution(m_cylinderSource->GetResolution() - 1);
 
     ui->vtkWidget->renderWindow()->Render();
 }

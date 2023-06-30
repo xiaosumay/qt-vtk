@@ -16,6 +16,7 @@ class vtkGenericOpenGLRenderWindow;
 
 class vtkCylinderSource;
 class vtkPolyDataMapper;
+class vtkInteractorStyleTrackballCamera;
 
 class TestVtk : public QWidget
 {
@@ -26,14 +27,18 @@ public:
     ~TestVtk();
 
 private slots:
-    void on_open_clicked();
+    void on_asc_clicked();
+    void on_desc_clicked();
 
 private:
     Ui::TestVtk *ui;
 
     vtkSmartPointer<vtkActor> m_cylinderActor;
     vtkSmartPointer<vtkCylinderSource> m_cylinderSource;
+    vtkSmartPointer<vtkPolyDataMapper> m_polyDataMapper;
     vtkSmartPointer<vtkRenderer> m_renderer;
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> m_renderWindow;
+
+    vtkSmartPointer<vtkInteractorStyleTrackballCamera> m_style;
 };
 #endif  // TESTVTK_H
