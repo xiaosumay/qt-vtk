@@ -23,12 +23,14 @@ class TestVtk : public QWidget
     Q_OBJECT
 
 public:
-    TestVtk(QWidget *parent = nullptr);
+    explicit TestVtk(QWidget *parent = nullptr);
     ~TestVtk();
 
 private slots:
     void on_asc_clicked();
     void on_desc_clicked();
+
+    void on_close_clicked();
 
 private:
     Ui::TestVtk *ui;
@@ -38,7 +40,5 @@ private:
     vtkSmartPointer<vtkPolyDataMapper> m_polyDataMapper;
     vtkSmartPointer<vtkRenderer> m_renderer;
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> m_renderWindow;
-
-    vtkSmartPointer<vtkInteractorStyleTrackballCamera> m_style;
 };
 #endif  // TESTVTK_H

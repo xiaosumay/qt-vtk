@@ -6,12 +6,9 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>767</width>
+    <height>542</height>
    </rect>
-  </property>
-  <property name="windowTitle">
-   <string>TestVtk</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_2">
    <property name="spacing">
@@ -39,14 +36,21 @@
        <item>
         <widget class="QPushButton" name="asc">
          <property name="text">
-          <string>asc</string>
+          <string>Asc</string>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QPushButton" name="desc">
          <property name="text">
-          <string>desc</string>
+          <string>Desc</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="close">
+         <property name="text">
+          <string>Close</string>
          </property>
         </widget>
        </item>
