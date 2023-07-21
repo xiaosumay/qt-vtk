@@ -9,12 +9,17 @@
 #include <QVTKOpenGLNativeWidget.h>
 
 #include <vtkAutoInit.h>
-VTK_MODULE_INIT(vtkRenderingOpenGL2)
+VTK_MODULE_INIT(vtkRenderingOpenGL2);
+VTK_MODULE_INIT(vtkRenderingContextOpenGL2);
+VTK_MODULE_INIT(vtkRenderingVolumeOpenGL2);
+VTK_MODULE_INIT(vtkInteractionStyle);
+VTK_MODULE_INIT(vtkRenderingFreeType);
 
 static void OutputRedirection(QtMsgType type, const QMessageLogContext &context, const QString &msg)
 {
     QByteArray _msg = msg.toLocal8Bit();
-    switch (type) {
+    switch (type)
+    {
     case QtDebugMsg:
         fprintf(stdout, "Debug: %s (%s:%u, %s)\n", _msg.constData(), context.file, context.line, context.function);
         break;
@@ -44,8 +49,6 @@ int main(int argc, char *argv[])
 
     QTranslator translator;
     QLocale locale;
-    qDebug() << locale.language();
-
     if (locale.language() == QLocale::Chinese)
     {
         bool load = translator.load(QStringLiteral("test-vtk_zh_CN.qm"));

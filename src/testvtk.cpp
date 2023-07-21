@@ -1,98 +1,131 @@
 #include "testvtk.h"
+#include "qwindowdefs.h"
 #include "ui_testvtk.h"
+
+#include <chrono>
 
 #include <vtkActor.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkRenderer.h>
-#include <vtkCylinderSource.h>
 #include <vtkPolyDataMapper.h>
-#include <vtkRenderWindowInteractor.h>
-#include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkPointData.h>
 #include <vtkPolyData.h>
 #include <vtkFloatArray.h>
+#include <vtkDistanceWidget.h>
+#include <vtkDistanceRepresentation.h>
+#include <vtkJPEGReader.h>
+#include <vtkImageActor.h>
+#include <vtkInteractorStyleImage.h>
 
 #include <QFileDialog>
 #include <QDebug>
+#include <QStandardPaths>
 
 #include "version_internal.h"
+#include "vtkObject.h"
+#include "vtkSmartPointer.h"
+
+using namespace std::chrono_literals;
+
+class MyStyle final : public vtkInteractorStyleImage
+{
+    vtkTypeMacro(MyStyle, vtkInteractorStyleImage);
+
+public:
+    static MyStyle *New() { return new MyStyle; }
+
+    void OnLeftButtonDown() override
+    {
+        std::cout << "Pressed left mouse button." << std::endl;
+        // Forward events
+        vtkInteractorStyleImage::OnLeftButtonDown();
+    }
+
+    void OnLeftButtonUp() override
+    {
+        std::cout << "Release left mouse button." << std::endl;
+
+        vtkInteractorStyleImage::OnLeftButtonUp();
+    }
+
+    void OnRightButtonDown() override
+    {
+        std::cout << "Pressed right mouse button." << std::endl;
+
+        vtkInteractorStyleImage::OnRightButtonDown();
+    }
+
+    void OnRightButtonUp() override
+    {
+        std::cout << "Release right mouse button." << std::endl;
+
+        vtkInteractorStyleImage::OnRightButtonUp();
+    }
+
+    void OnMouseMove() override
+    {
+        //
+        vtkInteractorStyleImage::OnMouseMove();
+    }
+};
 
 TestVtk::TestVtk(QWidget *parent)
     : QWidget(parent)
     , ui(new Ui::TestVtk{})
+    , _render_timer(-1)
 {
     ui->setupUi(this);
     setWindowTitle(tr("Test VTK") + QStringLiteral(" " TEST_VTK_VERSION_FULL));
 
-    m_cylinderActor = vtkSmartPointer<vtkActor>::New();
+    _jpeg_reader = vtkSmartPointer<vtkJPEGReader>::New();
 
-    const int num_points = 5;
-    float x[num_points][3] = {
-        {   0,    0, 0},
-        {   1,    0, 0},
-        {   1,    1, 0},
-        {   0,    1, 0},
-        {0.5f, 0.5f, 1}
-    };
+    _image_actor = vtkSmartPointer<vtkImageActor>::New();
+    _image_actor->SetInputData(_jpeg_reader->GetOutput());
 
-    vtkIdType pts[4][3] = {
-        {0, 1, 4},
-        {1, 2, 4},
-        {2, 3, 4},
-        {3, 0, 4}
-    };
+    _renderer = vtkSmartPointer<vtkRenderer>::New();
+    _renderer->SetBackground(0.1, 0.2, 0.4);
 
-    auto points = vtkSmartPointer<vtkPoints>::New();
-    for (int i = 0; i < num_points; i++)
-        points->InsertPoint(i, x[i]);
+    _renderer->AddActor(_image_actor);
 
-    auto polys = vtkSmartPointer<vtkCellArray>::New();
-    for (int i = 0; i < 4; i++)
-        polys->InsertNextCell(3, pts[i]);
-    polys->InsertNextCell(4);
-    for (int i = 0; i < 4; i++)
-        polys->InsertCellPoint(i);
+    _render_window = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
+    _render_window->AddRenderer(_renderer);
 
-    auto scalars = vtkSmartPointer<vtkFloatArray>::New();
-    for (int i = 0; i < num_points; i++)
-        scalars->InsertTuple1(i, i);
+    ui->vtkWidget->SetRenderWindow(_render_window);
 
-    auto cube = vtkSmartPointer<vtkPolyData>::New();
-    cube->SetPoints(points);
-    cube->SetPolys(polys);
-    cube->GetPointData()->SetScalars(scalars);
+    auto style = vtkSmartPointer<MyStyle>::New();
+    ui->vtkWidget->GetInteractor()->SetInteractorStyle(style);
 
-    m_polyDataMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-    m_polyDataMapper->SetInputData(cube);
-    m_cylinderActor->SetMapper(m_polyDataMapper);
-
-    m_renderer = vtkSmartPointer<vtkRenderer>::New();
-    m_renderer->AddActor(m_cylinderActor);
-    m_renderer->SetBackground(0.1, 0.2, 0.4);
-
-    m_renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-    m_renderWindow->AddRenderer(m_renderer);
-
-    ui->vtkWidget->SetRenderWindow(m_renderWindow);
+    _render_timer = startTimer(100ms, Qt::PreciseTimer);
 }
 
 TestVtk::~TestVtk()
 {
+    if (_render_timer != -1) killTimer(_render_timer);
+
     delete ui;
 }
 
-void TestVtk::on_asc_clicked()
+void TestVtk::on_open_clicked()
 {
-    ui->vtkWidget->GetRenderWindow()->Render();
+    auto path = QFileDialog::getOpenFileName(this,
+        tr("Image"),
+        QStandardPaths::standardLocations(QStandardPaths::PicturesLocation).at(0),
+        "images(*.jpg *.jpeg)");
+
+    if (path.isEmpty()) return;
+
+    _jpeg_reader->SetFileName(path.toLocal8Bit().data());
+    _jpeg_reader->Update();
+
+    _image_actor->SetInputData(_jpeg_reader->GetOutput());
+
+    _renderer->ResetCamera();
 }
 
-void TestVtk::on_desc_clicked()
+void TestVtk::timerEvent(QTimerEvent *event)
 {
-    ui->vtkWidget->GetRenderWindow()->Render();
-}
-
-void TestVtk::on_close_clicked()
-{
-    qApp->aboutQt();
-    qApp->quit();
+    if (event->timerId() == _render_timer)
+    {
+        ui->vtkWidget->GetRenderWindow()->Render();
+    }
 }

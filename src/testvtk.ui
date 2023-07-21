@@ -34,23 +34,9 @@
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
-        <widget class="QPushButton" name="asc">
+        <widget class="QPushButton" name="open">
          <property name="text">
-          <string>Asc</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="desc">
-         <property name="text">
-          <string>Desc</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QPushButton" name="close">
-         <property name="text">
-          <string>Close</string>
+          <string>Open</string>
          </property>
         </widget>
        </item>

@@ -4,24 +4,31 @@
 <context>
     <name>TestVtk</name>
     <message>
-        <location filename="../src/testvtk.ui" line="39"/>
         <source>Asc</source>
-        <translation>增加</translation>
+        <translation type="vanished">增加</translation>
     </message>
     <message>
-        <location filename="../src/testvtk.ui" line="46"/>
         <source>Desc</source>
-        <translation>减少</translation>
+        <translation type="vanished">减少</translation>
     </message>
     <message>
-        <location filename="../src/testvtk.ui" line="53"/>
         <source>Close</source>
-        <translation>关闭</translation>
+        <translation type="vanished">关闭</translation>
     </message>
     <message>
-        <location filename="../src/testvtk.cpp" line="25"/>
+        <location filename="../src/testvtk.cpp" line="84"/>
         <source>Test VTK</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/testvtk.cpp" line="117"/>
+        <source>Image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <location filename="../src/testvtk.ui" line="39"/>
+        <source>Open</source>
+        <translation>打开</translation>
     </message>
 </context>
 </TS>

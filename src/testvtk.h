@@ -12,11 +12,10 @@ QT_END_NAMESPACE
 
 class vtkActor;
 class vtkRenderer;
-class vtkGenericOpenGLRenderWindow;
-
-class vtkCylinderSource;
+class vtkJPEGReader;
+class vtkImageActor;
 class vtkPolyDataMapper;
-class vtkInteractorStyleTrackballCamera;
+class vtkGenericOpenGLRenderWindow;
 
 class TestVtk : public QWidget
 {
@@ -26,19 +25,21 @@ public:
     explicit TestVtk(QWidget *parent = nullptr);
     ~TestVtk();
 
-private slots:
-    void on_asc_clicked();
-    void on_desc_clicked();
+protected:
+    void timerEvent(QTimerEvent *event) override;
 
-    void on_close_clicked();
+private slots:
+    void on_open_clicked();
 
 private:
     Ui::TestVtk *ui;
 
-    vtkSmartPointer<vtkActor> m_cylinderActor;
-    vtkSmartPointer<vtkCylinderSource> m_cylinderSource;
-    vtkSmartPointer<vtkPolyDataMapper> m_polyDataMapper;
-    vtkSmartPointer<vtkRenderer> m_renderer;
-    vtkSmartPointer<vtkGenericOpenGLRenderWindow> m_renderWindow;
+    int _render_timer;
+
+    vtkSmartPointer<vtkJPEGReader> _jpeg_reader;
+    vtkSmartPointer<vtkImageActor> _image_actor;
+    vtkSmartPointer<vtkPolyDataMapper> _poly_data_mapper;
+    vtkSmartPointer<vtkRenderer> _renderer;
+    vtkSmartPointer<vtkGenericOpenGLRenderWindow> _render_window;
 };
 #endif  // TESTVTK_H
