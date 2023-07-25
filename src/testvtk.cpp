@@ -1,75 +1,35 @@
 #include "testvtk.h"
-#include "qwindowdefs.h"
+#include "qnamespace.h"
 #include "ui_testvtk.h"
 
+#include "version_internal.h"
+
 #include <chrono>
+
+#include <QFileDialog>
+#include <QDebug>
+#include <QStandardPaths>
 
 #include <vtkActor.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkRenderer.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkPointData.h>
-#include <vtkPolyData.h>
-#include <vtkFloatArray.h>
-#include <vtkDistanceWidget.h>
-#include <vtkDistanceRepresentation.h>
-#include <vtkJPEGReader.h>
-#include <vtkImageActor.h>
-#include <vtkInteractorStyleImage.h>
 
-#include <QFileDialog>
-#include <QDebug>
-#include <QStandardPaths>
+#include <vtkPolyLine.h>
+#include <vtkSmartPointer.h>
+#include <vtkSphereSource.h>
+#include <vtkMinimalStandardRandomSequence.h>
+#include <vtkCamera.h>
+#include <vtkAxesActor.h>
 
-#include "version_internal.h"
-#include "vtkObject.h"
-#include "vtkSmartPointer.h"
+#include "selected_actor_mgr.h"
+#include "my_interactor_style.h"
 
 using namespace std::chrono_literals;
+using namespace lingxi::vtk;
 
-class MyStyle final : public vtkInteractorStyleImage
-{
-    vtkTypeMacro(MyStyle, vtkInteractorStyleImage);
-
-public:
-    static MyStyle *New() { return new MyStyle; }
-
-    void OnLeftButtonDown() override
-    {
-        std::cout << "Pressed left mouse button." << std::endl;
-        // Forward events
-        vtkInteractorStyleImage::OnLeftButtonDown();
-    }
-
-    void OnLeftButtonUp() override
-    {
-        std::cout << "Release left mouse button." << std::endl;
-
-        vtkInteractorStyleImage::OnLeftButtonUp();
-    }
-
-    void OnRightButtonDown() override
-    {
-        std::cout << "Pressed right mouse button." << std::endl;
-
-        vtkInteractorStyleImage::OnRightButtonDown();
-    }
-
-    void OnRightButtonUp() override
-    {
-        std::cout << "Release right mouse button." << std::endl;
-
-        vtkInteractorStyleImage::OnRightButtonUp();
-    }
-
-    void OnMouseMove() override
-    {
-        //
-        vtkInteractorStyleImage::OnMouseMove();
-    }
-};
-
-TestVtk::TestVtk(QWidget *parent)
+TestVtk::TestVtk(QWidget* parent)
     : QWidget(parent)
     , ui(new Ui::TestVtk{})
     , _render_timer(-1)
@@ -77,55 +37,93 @@ TestVtk::TestVtk(QWidget *parent)
     ui->setupUi(this);
     setWindowTitle(tr("Test VTK") + QStringLiteral(" " TEST_VTK_VERSION_FULL));
 
-    _jpeg_reader = vtkSmartPointer<vtkJPEGReader>::New();
-
-    _image_actor = vtkSmartPointer<vtkImageActor>::New();
-    _image_actor->SetInputData(_jpeg_reader->GetOutput());
+    _random_sequence = vtkSmartPointer<vtkMinimalStandardRandomSequence>::New();
+    _random_sequence->SetSeed(8775070);
 
     _renderer = vtkSmartPointer<vtkRenderer>::New();
     _renderer->SetBackground(0.1, 0.2, 0.4);
-
-    _renderer->AddActor(_image_actor);
 
     _render_window = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
     _render_window->AddRenderer(_renderer);
 
     ui->vtkWidget->SetRenderWindow(_render_window);
 
-    auto style = vtkSmartPointer<MyStyle>::New();
-    ui->vtkWidget->GetInteractor()->SetInteractorStyle(style);
+    _my_interactor_style = vtkSmartPointer<MyInteractorStyle>::New();
+    connect(_my_interactor_style, &MyInteractorStyle::statusRenderer, this, &TestVtk::onStatusRenderer);
 
-    _render_timer = startTimer(100ms, Qt::PreciseTimer);
+    _my_interactor_style->SetDefaultRenderer(_renderer);
+    ui->vtkWidget->GetInteractor()->SetInteractorStyle(_my_interactor_style);
+
+    auto axes_actor = vtkSmartPointer<vtkAxesActor>::New();
+    axes_actor->SetTotalLength(10, 10, 10);
+    axes_actor->SetPickable(false);
+    axes_actor->SetAxisLabels(false);
+
+    _renderer->AddActor(axes_actor);
+
+    onStatusRenderer(true);
 }
 
 TestVtk::~TestVtk()
 {
-    if (_render_timer != -1) killTimer(_render_timer);
+    onStatusRenderer(false);
 
     delete ui;
 }
 
-void TestVtk::on_open_clicked()
+void TestVtk::on_add_cube_clicked()
 {
-    auto path = QFileDialog::getOpenFileName(this,
-        tr("Image"),
-        QStandardPaths::standardLocations(QStandardPaths::PicturesLocation).at(0),
-        "images(*.jpg *.jpeg)");
+    auto source = vtkSmartPointer<vtkSphereSource>::New();
 
-    if (path.isEmpty()) return;
+    double x, y, z, radius;
+    // random position and radius
+    x = _random_sequence->GetRangeValue(-5.0, 5.0);
+    _random_sequence->Next();
+    y = _random_sequence->GetRangeValue(-5.0, 5.0);
+    _random_sequence->Next();
+    z = _random_sequence->GetRangeValue(-5.0, 5.0);
+    _random_sequence->Next();
+    radius = _random_sequence->GetRangeValue(0.5, 1.0);
+    _random_sequence->Next();
 
-    _jpeg_reader->SetFileName(path.toLocal8Bit().data());
-    _jpeg_reader->Update();
+    source->SetRadius(radius);
+    source->SetCenter(x, y, z);
+    source->SetPhiResolution(11);
+    source->SetThetaResolution(21);
 
-    _image_actor->SetInputData(_jpeg_reader->GetOutput());
+    auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    mapper->SetInputConnection(source->GetOutputPort());
+
+    auto actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+
+    _renderer->AddActor(actor);
 
     _renderer->ResetCamera();
 }
 
-void TestVtk::timerEvent(QTimerEvent *event)
+void TestVtk::on_delete_cube_clicked()
 {
-    if (event->timerId() == _render_timer)
+    _my_interactor_style->RemoveSelected();
+}
+
+void TestVtk::timerEvent(QTimerEvent* event)
+{
+    if (event->timerId() == _render_timer) { ui->vtkWidget->GetRenderWindow()->Render(); }
+}
+
+void TestVtk::onStatusRenderer(bool renderer)
+{
+    if (renderer)
     {
-        ui->vtkWidget->GetRenderWindow()->Render();
+        if (_render_timer == -1) _render_timer = startTimer(16ms, Qt::PreciseTimer);
+    }
+    else
+    {
+        if (_render_timer != -1)
+        {
+            killTimer(_render_timer);
+            _render_timer = -1;
+        }
     }
 }

@@ -24,7 +24,7 @@ endif ()
 if (WIN32)
     target_compile_options(${PROJECT_NAME} PRIVATE /utf-8)
 
-    list(APPEND CMAKE_PREFIX_PATH C:/Qt/VTK-8.2.0/${CMAKE_BUILD_TYPE})
+    list(APPEND CMAKE_PREFIX_PATH C:/Qt/VTK-8.2.0)
     list(APPEND CMAKE_PREFIX_PATH C:/Qt/Qt5.12.9/5.12.9/msvc2017_64)
 else ()
     list(APPEND CMAKE_PREFIX_PATH /opt/VTK-8.2.0)

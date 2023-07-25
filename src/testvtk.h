@@ -2,6 +2,7 @@
 #define TESTVTK_H
 
 #include <QWidget>
+#include "vtkActor.h"
 #include <vtkSmartPointer.h>
 
 /* clang-format off */
@@ -10,12 +11,14 @@ namespace Ui { class TestVtk; }
 QT_END_NAMESPACE
 /* clang-format on */
 
-class vtkActor;
 class vtkRenderer;
-class vtkJPEGReader;
-class vtkImageActor;
-class vtkPolyDataMapper;
 class vtkGenericOpenGLRenderWindow;
+class vtkMinimalStandardRandomSequence;
+
+namespace lingxi::vtk
+{
+class MyInteractorStyle;
+}
 
 class TestVtk : public QWidget
 {
@@ -29,17 +32,19 @@ protected:
     void timerEvent(QTimerEvent *event) override;
 
 private slots:
-    void on_open_clicked();
+    void on_add_cube_clicked();
+    void on_delete_cube_clicked();
+
+    void onStatusRenderer(bool);
 
 private:
     Ui::TestVtk *ui;
 
     int _render_timer;
 
-    vtkSmartPointer<vtkJPEGReader> _jpeg_reader;
-    vtkSmartPointer<vtkImageActor> _image_actor;
-    vtkSmartPointer<vtkPolyDataMapper> _poly_data_mapper;
+    vtkSmartPointer<vtkMinimalStandardRandomSequence> _random_sequence;
     vtkSmartPointer<vtkRenderer> _renderer;
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> _render_window;
+    vtkSmartPointer<lingxi::vtk::MyInteractorStyle> _my_interactor_style;
 };
 #endif  // TESTVTK_H
