@@ -24,16 +24,17 @@ namespace lingxi::vtk
 class MyInteractorStyle;
 }
 
-class TestVtk : public QWidget
+class TestVtk final : public QWidget
 {
     Q_OBJECT
 
 public:
     explicit TestVtk(QWidget *parent = nullptr);
-    ~TestVtk();
+    ~TestVtk() final;
 
-    void add_cube_at(double x, double y, double z);
-    void remove_cube_at(vtkActor *);
+    void AddCubeAt(double x, double y, double z);
+    void RemoveCubeAt(vtkActor *actor);
+    void ClearCubeAt(vtkActor *actor);
 
 protected:
     void timerEvent(QTimerEvent *event) override;

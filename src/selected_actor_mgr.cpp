@@ -7,7 +7,7 @@
  */
 #include "selected_actor_mgr.h"
 
-#include "vtkActor.h"
+#include <vtkActor.h>
 #include <vtkProperty.h>
 #include <vtkRenderer.h>
 
@@ -32,6 +32,21 @@ void SelectedActorMgr::AddActor(vtkActor* actor)
     actor->GetProperty()->SetColor(1.0, 0.0, 0.0);
     actor->GetProperty()->SetDiffuse(1.0);
     actor->GetProperty()->SetSpecular(0.0);
+}
+
+void SelectedActorMgr::RemoveActor(vtkActor* actor)
+{
+    for (auto it = _selected_actors.cbegin(); it != _selected_actors.cend(); ++it)
+    {
+        auto [item, property] = *it;
+
+        if (item == actor)
+        {
+            actor->GetProperty()->DeepCopy(property);
+            _selected_actors.erase(it);
+            break;
+        }
+    }
 }
 
 void SelectedActorMgr::Reset()

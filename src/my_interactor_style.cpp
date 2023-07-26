@@ -19,6 +19,7 @@
 #include <vtkRenderWindowInteractor.h>
 #include <vtkInteractorObserver.h>
 #include <vtkRenderer.h>
+#include "vtkSmartPointer.h"
 
 namespace lingxi::vtk
 {
@@ -30,6 +31,7 @@ MyInteractorStyle::MyInteractorStyle()
     _end_position[0] = _end_position[1] = 0;
     _select_actor = false;
 
+    _pixel_array = vtkSmartPointer<vtkUnsignedCharArray>::New();
     _pixel_array->Initialize();
     _pixel_array->SetNumberOfComponents(4);
 }
@@ -68,15 +70,25 @@ void MyInteractorStyle::OnLeftButtonDown()
             _move_actor = true;
             if (!_selected_actors.Contain(actor))
             {
-                _selected_actors.Reset();
-                _selected_actors.Clear();
+                if (!GetInteractor()->GetControlKey())
+                {
+                    _selected_actors.Reset();
+                    _selected_actors.Clear();
+                }
+
                 _selected_actors.AddActor(actor);
+            }
+            else
+            {
+                if (GetInteractor()->GetControlKey())
+                {
+                    _selected_actors.RemoveActor(actor);
+                }
             }
         }
         else
         {
-            auto style = vtkInteractorStyle::SafeDownCast(GetInteractor()->GetInteractorStyle());
-            style->OnLeftButtonDown();
+            _interactor_style->OnLeftButtonDown();
         }
     }
 }
@@ -102,6 +114,8 @@ void MyInteractorStyle::OnMouseMove()
         motion_vector[2] = new_pick_point[2] - old_pick_point[2];
 
         _selected_actors.AddPosition(motion_vector[0], motion_vector[1], motion_vector[2]);
+
+        GetInteractor()->GetRenderWindow()->Render();
     }
     else if (_select_actor)
     {
@@ -109,25 +123,37 @@ void MyInteractorStyle::OnMouseMove()
         _end_position[1] = GetInteractor()->GetEventPosition()[1];
 
         int* size = GetInteractor()->GetRenderWindow()->GetSize();
-        if (_end_position[0] > (size[0] - 1)) { _end_position[0] = size[0] - 1; }
-        if (_end_position[0] < 0) { _end_position[0] = 0; }
-        if (_end_position[1] > (size[1] - 1)) { _end_position[1] = size[1] - 1; }
-        if (_end_position[1] < 0) { _end_position[1] = 0; }
+        if (_end_position[0] > (size[0] - 1))
+        {
+            _end_position[0] = size[0] - 1;
+        }
+        if (_end_position[0] < 0)
+        {
+            _end_position[0] = 0;
+        }
+        if (_end_position[1] > (size[1] - 1))
+        {
+            _end_position[1] = size[1] - 1;
+        }
+        if (_end_position[1] < 0)
+        {
+            _end_position[1] = 0;
+        }
 
         RedrawRubberBand();
     }
     else
     {
-        auto style = vtkInteractorStyle::SafeDownCast(GetInteractor()->GetInteractorStyle());
-        style->OnMouseMove();
+        _interactor_style->OnMouseMove();
     }
-
-    GetInteractor()->GetRenderWindow()->Render();
 }
 
 void MyInteractorStyle::OnLeftButtonUp()
 {
-    if (_move_actor) { _move_actor = false; }
+    if (_move_actor)
+    {
+        _move_actor = false;
+    }
 
     if (_select_actor)
     {
@@ -135,8 +161,7 @@ void MyInteractorStyle::OnLeftButtonUp()
         Pick();
     }
 
-    auto style = vtkInteractorStyle::SafeDownCast(GetInteractor()->GetInteractorStyle());
-    style->OnLeftButtonUp();
+    _interactor_style->OnLeftButtonUp();
 }
 
 void MyInteractorStyle::RemoveSelected()
@@ -157,20 +182,44 @@ void MyInteractorStyle::RedrawRubberBand()
     int min[2], max[2];
 
     min[0] = _start_position[0] <= _end_position[0] ? _start_position[0] : _end_position[0];
-    if (min[0] < 0) { min[0] = 0; }
-    if (min[0] >= size[0]) { min[0] = size[0] - 1; }
+    if (min[0] < 0)
+    {
+        min[0] = 0;
+    }
+    if (min[0] >= size[0])
+    {
+        min[0] = size[0] - 1;
+    }
 
     min[1] = _start_position[1] <= _end_position[1] ? _start_position[1] : _end_position[1];
-    if (min[1] < 0) { min[1] = 0; }
-    if (min[1] >= size[1]) { min[1] = size[1] - 1; }
+    if (min[1] < 0)
+    {
+        min[1] = 0;
+    }
+    if (min[1] >= size[1])
+    {
+        min[1] = size[1] - 1;
+    }
 
     max[0] = _end_position[0] > _start_position[0] ? _end_position[0] : _start_position[0];
-    if (max[0] < 0) { max[0] = 0; }
-    if (max[0] >= size[0]) { max[0] = size[0] - 1; }
+    if (max[0] < 0)
+    {
+        max[0] = 0;
+    }
+    if (max[0] >= size[0])
+    {
+        max[0] = size[0] - 1;
+    }
 
     max[1] = _end_position[1] > _start_position[1] ? _end_position[1] : _start_position[1];
-    if (max[1] < 0) { max[1] = 0; }
-    if (max[1] >= size[1]) { max[1] = size[1] - 1; }
+    if (max[1] < 0)
+    {
+        max[1] = 0;
+    }
+    if (max[1] >= size[1])
+    {
+        max[1] = size[1] - 1;
+    }
 
     int i;
     for (i = min[0]; i <= max[0]; i++)
@@ -201,20 +250,44 @@ void MyInteractorStyle::Pick()
     int* size = GetInteractor()->GetRenderWindow()->GetSize();
     int min[2], max[2];
     min[0] = _start_position[0] <= _end_position[0] ? _start_position[0] : _end_position[0];
-    if (min[0] < 0) { min[0] = 0; }
-    if (min[0] >= size[0]) { min[0] = size[0] - 2; }
+    if (min[0] < 0)
+    {
+        min[0] = 0;
+    }
+    if (min[0] >= size[0])
+    {
+        min[0] = size[0] - 2;
+    }
 
     min[1] = _start_position[1] <= _end_position[1] ? _start_position[1] : _end_position[1];
-    if (min[1] < 0) { min[1] = 0; }
-    if (min[1] >= size[1]) { min[1] = size[1] - 2; }
+    if (min[1] < 0)
+    {
+        min[1] = 0;
+    }
+    if (min[1] >= size[1])
+    {
+        min[1] = size[1] - 2;
+    }
 
     max[0] = _end_position[0] > _start_position[0] ? _end_position[0] : _start_position[0];
-    if (max[0] < 0) { max[0] = 0; }
-    if (max[0] >= size[0]) { max[0] = size[0] - 2; }
+    if (max[0] < 0)
+    {
+        max[0] = 0;
+    }
+    if (max[0] >= size[0])
+    {
+        max[0] = size[0] - 2;
+    }
 
     max[1] = _end_position[1] > _start_position[1] ? _end_position[1] : _start_position[1];
-    if (max[1] < 0) { max[1] = 0; }
-    if (max[1] >= size[1]) { max[1] = size[1] - 2; }
+    if (max[1] < 0)
+    {
+        max[1] = 0;
+    }
+    if (max[1] >= size[1])
+    {
+        max[1] = size[1] - 2;
+    }
 
     vtkNew<vtkAreaPicker> picker;
     picker->AreaPick(min[0], min[1], max[0], max[1], GetInteractor()->GetInteractorStyle()->GetDefaultRenderer());
@@ -227,7 +300,8 @@ void MyInteractorStyle::Pick()
     for (vtkIdType i = 0; i < props->GetNumberOfItems(); i++)
     {
         vtkActor* actor = vtkActor::SafeDownCast(props->GetNextProp3D());
-        if (!actor) continue;
+        if (!actor)
+            continue;
 
         _selected_actors.AddActor(actor);
     }
@@ -236,6 +310,17 @@ void MyInteractorStyle::Pick()
 bool MyInteractorStyle::IsSelectedActor(vtkActor* actor)
 {
     return _selected_actors.Contain(actor);
+}
+
+void MyInteractorStyle::SetInteractor(vtkRenderWindowInteractor* interactor)
+{
+    _interactor = interactor;
+    _interactor_style = vtkInteractorStyle::SafeDownCast(interactor->GetInteractorStyle());
+}
+
+void MyInteractorStyle::RemoveSelected(vtkActor* p)
+{
+    _selected_actors.RemoveActor(p);
 }
 
 }  // namespace lingxi::vtk

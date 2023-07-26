@@ -9,6 +9,7 @@
 #include <QFileDialog>
 #include <QDebug>
 #include <QStandardPaths>
+#include <QMenu>
 
 #include <vtkActor.h>
 #include <vtkGenericOpenGLRenderWindow.h>
@@ -24,14 +25,9 @@
 #include <vtkAxesActor.h>
 #include <vtkEventQtSlotConnect.h>
 #include <vtkInteractorStyleTrackballCamera.h>
-#include <vtkInteractorObserver.h>
-#include <QMenu>
-#include <vtkWorldPointPicker.h>
 #include <vtkPointPicker.h>
 
 #include "selected_actor_mgr.h"
-#include "vtkInteractorStyle.h"
-#include "vtkNew.h"
 
 using namespace std::chrono_literals;
 using namespace lingxi::vtk;
@@ -54,13 +50,15 @@ TestVtk::TestVtk(QWidget* parent)
     _render_window->AddRenderer(_renderer);
 
     ui->vtkWidget->SetRenderWindow(_render_window);
-    _my_interactor_style.SetInteractor(ui->vtkWidget->GetInteractor());
 
     auto style = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
     style->SetDefaultRenderer(_renderer);
 
     auto inter = ui->vtkWidget->GetInteractor();
     inter->SetInteractorStyle(style);
+
+    _my_interactor_style.SetInteractor(inter);
+
     inter->RemoveObservers(vtkCommand::LeftButtonPressEvent);
     inter->RemoveObservers(vtkCommand::LeftButtonReleaseEvent);
     inter->RemoveObservers(vtkCommand::RightButtonPressEvent);
@@ -129,14 +127,18 @@ void TestVtk::on_delete_cube_clicked()
 
 void TestVtk::timerEvent(QTimerEvent* event)
 {
-    if (event->timerId() == _render_timer) { ui->vtkWidget->GetRenderWindow()->Render(); }
+    if (event->timerId() == _render_timer)
+    {
+        ui->vtkWidget->GetRenderWindow()->Render();
+    }
 }
 
 void TestVtk::onStatusRenderer(bool renderer)
 {
     if (renderer)
     {
-        if (_render_timer == -1) _render_timer = startTimer(40ms, Qt::PreciseTimer);
+        if (_render_timer == -1)
+            _render_timer = startTimer(40ms, Qt::PreciseTimer);
     }
     else
     {
@@ -152,7 +154,8 @@ void TestVtk::onVtkLeftButtonPress(vtkObject* obj)
 {
     vtkRenderWindowInteractor* iren = vtkRenderWindowInteractor::SafeDownCast(obj);
 
-    if (iren->GetAltKey()) onStatusRenderer(false);
+    if (iren->GetAltKey())
+        onStatusRenderer(false);
 
     _my_interactor_style.OnLeftButtonDown();
 }
@@ -168,13 +171,6 @@ void TestVtk::onVtkRightButtonPress(vtkObject* obj)
 {
     vtkRenderWindowInteractor* iren = vtkRenderWindowInteractor::SafeDownCast(obj);
 
-    if (!iren->GetAltKey())
-    {
-        auto style = vtkInteractorStyle::SafeDownCast(iren->GetInteractorStyle());
-        style->OnRightButtonDown();
-        return;
-    }
-
     auto event_pos = iren->GetEventPosition();
 
     vtkNew<vtkPointPicker> picker;
@@ -182,39 +178,35 @@ void TestVtk::onVtkRightButtonPress(vtkObject* obj)
 
     QMenu menu;
 
-    if (picker->GetActor())
+    auto cur_actor = picker->GetActor();
+    if (cur_actor)
     {
-        menu.addAction(tr("Remove"), [this, actor = picker->GetActor()]() { this->remove_cube_at(actor); });
+        if (_my_interactor_style.IsSelectedActor(cur_actor))
+        {
+            menu.addAction(tr("Clear Selected"), [this, cur_actor]() { this->ClearCubeAt(cur_actor); });
+        }
+
+        menu.addAction(tr("Remove"), [this, cur_actor]() { this->RemoveCubeAt(cur_actor); });
     }
     else
     {
         double pos[3];
         picker->GetPickPosition(pos);
-        menu.addAction(tr("Add"), [this, x = pos[0], y = pos[1], z = pos[2]]() { this->add_cube_at(x, y, z); });
+        menu.addAction(tr("Add"), [this, x = pos[0], y = pos[1], z = pos[2]]() { this->AddCubeAt(x, y, z); });
     }
 
     // 在鼠标位置显示
     menu.exec(QCursor::pos());
 }
 
-void TestVtk::onVtkRightButtonRelease(vtkObject* obj)
-{
-    vtkRenderWindowInteractor* iren = vtkRenderWindowInteractor::SafeDownCast(obj);
-
-    if (!iren->GetAltKey())
-    {
-        auto style = vtkInteractorStyle::SafeDownCast(iren->GetInteractorStyle());
-        style->OnRightButtonUp();
-        return;
-    }
-}
+void TestVtk::onVtkRightButtonRelease(vtkObject*) {}
 
 void TestVtk::onVtkMouseMove(vtkObject* obj)
 {
     _my_interactor_style.OnMouseMove();
 }
 
-void TestVtk::add_cube_at(double x, double y, double z)
+void TestVtk::AddCubeAt(double x, double y, double z)
 {
     auto source = vtkSmartPointer<vtkSphereSource>::New();
 
@@ -235,8 +227,16 @@ void TestVtk::add_cube_at(double x, double y, double z)
     _renderer->AddActor(actor);
 }
 
-void TestVtk::remove_cube_at(vtkActor* p)
+void TestVtk::RemoveCubeAt(vtkActor* actor)
 {
-    if (!_my_interactor_style.IsSelectedActor(p)) { _renderer->RemoveActor(p); }
+    if (!_my_interactor_style.IsSelectedActor(actor))
+    {
+        _renderer->RemoveActor(actor);
+    }
     _my_interactor_style.RemoveSelected();
+}
+
+void TestVtk::ClearCubeAt(vtkActor* actor)
+{
+    _my_interactor_style.RemoveSelected(actor);
 }

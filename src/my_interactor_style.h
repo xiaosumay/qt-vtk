@@ -9,15 +9,17 @@
 #define __TEST_VTK_MY_INTERACTOR_STYLE_H__
 
 #include "selected_actor_mgr.h"
-#include "vtkActor.h"
 
+#include <vtkSmartPointer.h>
+
+class vtkInteractorStyle;
 class vtkUnsignedCharArray;
 class vtkRenderWindowInteractor;
 
 namespace lingxi::vtk
 {
 
-class MyInteractorStyle
+class MyInteractorStyle final
 {
 public:
     MyInteractorStyle();
@@ -29,9 +31,10 @@ public:
     void RemoveSelected();
 
     vtkRenderWindowInteractor *GetInteractor() { return _interactor; }
-    void SetInteractor(vtkRenderWindowInteractor *interactor) { _interactor = interactor; }
+    void SetInteractor(vtkRenderWindowInteractor *interactor);
 
     bool IsSelectedActor(vtkActor *);
+    void RemoveSelected(vtkActor *);
 
 protected:
     void Pick();
@@ -39,13 +42,14 @@ protected:
 
 private:
     vtkRenderWindowInteractor *_interactor;
+    vtkInteractorStyle *_interactor_style;
     bool _move_actor;
     bool _select_actor;
 
     int _start_position[2];
     int _end_position[2];
 
-    vtkNew<vtkUnsignedCharArray> _pixel_array;
+    vtkSmartPointer<vtkUnsignedCharArray> _pixel_array;
     lingxi::vtk::SelectedActorMgr _selected_actors;
 };
 

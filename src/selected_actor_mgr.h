@@ -10,20 +10,23 @@
 
 #include <unordered_map>
 
-#include "vtkActor.h"
-#include "vtkAssembly.h"
-#include "vtkNew.h"
+class vtkActor;
+class vtkProperty;
+class vtkRenderer;
 
 namespace lingxi::vtk
 {
 
-class SelectedActorMgr
+class SelectedActorMgr final
 {
+    using SelectedActorList = std::unordered_map<vtkActor *, vtkProperty *>;
+
 public:
     SelectedActorMgr() = default;
     ~SelectedActorMgr();
 
     void AddActor(vtkActor *actor);
+    void RemoveActor(vtkActor *actor);
     void Reset();
     void Clear();
 
@@ -36,10 +39,9 @@ public:
     void RemoveFrom(vtkRenderer *);
 
 private:
-    std::unordered_map<vtkActor *, vtkProperty *> _selected_actors;
+    SelectedActorList _selected_actors;
 };
 
 }  // namespace lingxi::vtk
-
 
 #endif  // __TEST_VTK_SELECTED_ACTOR_MGR_H__

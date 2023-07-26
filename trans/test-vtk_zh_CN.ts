@@ -4,21 +4,39 @@
 <context>
     <name>TestVtk</name>
     <message>
-        <location filename="../src/testvtk.cpp" line="45"/>
+        <location filename="../src/testvtk.cpp" line="41"/>
         <source>Test VTK</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
-        <location filename="../src/testvtk.ui" line="38"/>
-        <location filename="../src/testvtk.cpp" line="193"/>
+        <location filename="../src/testvtk.cpp" line="186"/>
+        <source>Clear Selected</source>
+        <translation>清除选择</translation>
+    </message>
+    <message>
+        <location filename="../src/testvtk.ui" line="45"/>
+        <location filename="../src/testvtk.cpp" line="195"/>
         <source>Add</source>
         <translation>添加</translation>
     </message>
     <message>
-        <location filename="../src/testvtk.ui" line="57"/>
-        <location filename="../src/testvtk.cpp" line="187"/>
+        <location filename="../src/testvtk.ui" line="64"/>
+        <location filename="../src/testvtk.cpp" line="189"/>
         <source>Remove</source>
         <translation>删除</translation>
+    </message>
+    <message>
+        <location filename="../src/testvtk.ui" line="86"/>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;
+&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;左键，3D旋转&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;右键，增减菜单&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;SHIFT+左键，相机平移&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;ALT+左键，选择框&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;CTRL+左键，单点选择&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;滚轮，放大缩小&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;
+&lt;/body&gt;&lt;/html&gt;</source>
+        <translation></translation>
     </message>
 </context>
 </TS>

@@ -14,7 +14,14 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout" stretch="5,1">
      <item>
-      <widget class="QVTKOpenGLNativeWidget" name="vtkWidget" native="true"/>
+      <widget class="QVTKOpenGLNativeWidget" name="vtkWidget" native="true">
+       <property name="minimumSize">
+        <size>
+         <width>800</width>
+         <height>600</height>
+        </size>
+       </property>
+      </widget>
      </item>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout">
@@ -59,6 +66,34 @@
           </widget>
          </item>
         </layout>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;
+&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;左键，3D旋转&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;右键，增减菜单&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;SHIFT+左键，相机平移&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;ALT+左键，选择框&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;CTRL+左键，单点选择&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;滚轮，放大缩小&lt;/span&gt;&lt;/p&gt;
+&lt;p&gt;
+&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
        </item>
        <item>
         <spacer name="verticalSpacer">
