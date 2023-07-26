@@ -8,47 +8,37 @@
 #ifndef __TEST_VTK_MY_INTERACTOR_STYLE_H__
 #define __TEST_VTK_MY_INTERACTOR_STYLE_H__
 
-#include <QObject>
-
-#include <vtkInteractorStyleTrackballCamera.h>
-#include <vtkRenderWindow.h>
-#include <vtkPropPicker.h>
-#include <vtkTransform.h>
-#include <vtkProperty.h>
-#include <vtkAreaPicker.h>
-#include <vtkObjectFactory.h>
-#include <vtkProp3DCollection.h>
-
 #include "selected_actor_mgr.h"
-#include "vtkRenderWindowInteractor.h"
-#include "vtkUnsignedCharArray.h"
+#include "vtkActor.h"
+
+class vtkUnsignedCharArray;
+class vtkRenderWindowInteractor;
 
 namespace lingxi::vtk
 {
 
-class MyInteractorStyle final : public QObject, public vtkInteractorStyleTrackballCamera
+class MyInteractorStyle
 {
-    Q_OBJECT
-    vtkTypeMacro(MyInteractorStyle, vtkInteractorStyleTrackballCamera);
-
-signals:
-    void statusRenderer(bool);
-
 public:
-    static MyInteractorStyle* New();
     MyInteractorStyle();
 
-    void OnLeftButtonDown() override;
-    void OnMouseMove() override;
-    void OnLeftButtonUp() override;
+    void OnLeftButtonDown();
+    void OnMouseMove();
+    void OnLeftButtonUp();
 
     void RemoveSelected();
-    
+
+    vtkRenderWindowInteractor *GetInteractor() { return _interactor; }
+    void SetInteractor(vtkRenderWindowInteractor *interactor) { _interactor = interactor; }
+
+    bool IsSelectedActor(vtkActor *);
+
 protected:
     void Pick();
     void RedrawRubberBand();
 
 private:
+    vtkRenderWindowInteractor *_interactor;
     bool _move_actor;
     bool _select_actor;
 

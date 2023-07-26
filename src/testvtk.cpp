@@ -22,9 +22,16 @@
 #include <vtkMinimalStandardRandomSequence.h>
 #include <vtkCamera.h>
 #include <vtkAxesActor.h>
+#include <vtkEventQtSlotConnect.h>
+#include <vtkInteractorStyleTrackballCamera.h>
+#include <vtkInteractorObserver.h>
+#include <QMenu>
+#include <vtkWorldPointPicker.h>
+#include <vtkPointPicker.h>
 
 #include "selected_actor_mgr.h"
-#include "my_interactor_style.h"
+#include "vtkInteractorStyle.h"
+#include "vtkNew.h"
 
 using namespace std::chrono_literals;
 using namespace lingxi::vtk;
@@ -47,12 +54,25 @@ TestVtk::TestVtk(QWidget* parent)
     _render_window->AddRenderer(_renderer);
 
     ui->vtkWidget->SetRenderWindow(_render_window);
+    _my_interactor_style.SetInteractor(ui->vtkWidget->GetInteractor());
 
-    _my_interactor_style = vtkSmartPointer<MyInteractorStyle>::New();
-    connect(_my_interactor_style, &MyInteractorStyle::statusRenderer, this, &TestVtk::onStatusRenderer);
+    auto style = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
+    style->SetDefaultRenderer(_renderer);
 
-    _my_interactor_style->SetDefaultRenderer(_renderer);
-    ui->vtkWidget->GetInteractor()->SetInteractorStyle(_my_interactor_style);
+    auto inter = ui->vtkWidget->GetInteractor();
+    inter->SetInteractorStyle(style);
+    inter->RemoveObservers(vtkCommand::LeftButtonPressEvent);
+    inter->RemoveObservers(vtkCommand::LeftButtonReleaseEvent);
+    inter->RemoveObservers(vtkCommand::RightButtonPressEvent);
+    inter->RemoveObservers(vtkCommand::RightButtonReleaseEvent);
+    inter->RemoveObservers(vtkCommand::MouseMoveEvent);
+
+    _vtk_connect = vtkSmartPointer<vtkEventQtSlotConnect>::New();
+    _vtk_connect->Connect(inter, vtkCommand::LeftButtonPressEvent, this, SLOT(onVtkLeftButtonPress(vtkObject*)));
+    _vtk_connect->Connect(inter, vtkCommand::LeftButtonReleaseEvent, this, SLOT(onVtkLeftButtonRelease(vtkObject*)));
+    _vtk_connect->Connect(inter, vtkCommand::RightButtonPressEvent, this, SLOT(onVtkRightButtonPress(vtkObject*)));
+    _vtk_connect->Connect(inter, vtkCommand::RightButtonReleaseEvent, this, SLOT(onVtkRightButtonRelease(vtkObject*)));
+    _vtk_connect->Connect(inter, vtkCommand::MouseMoveEvent, this, SLOT(onVtkMouseMove(vtkObject*)));
 
     auto axes_actor = vtkSmartPointer<vtkAxesActor>::New();
     axes_actor->SetTotalLength(10, 10, 10);
@@ -104,7 +124,7 @@ void TestVtk::on_add_cube_clicked()
 
 void TestVtk::on_delete_cube_clicked()
 {
-    _my_interactor_style->RemoveSelected();
+    _my_interactor_style.RemoveSelected();
 }
 
 void TestVtk::timerEvent(QTimerEvent* event)
@@ -116,7 +136,7 @@ void TestVtk::onStatusRenderer(bool renderer)
 {
     if (renderer)
     {
-        if (_render_timer == -1) _render_timer = startTimer(16ms, Qt::PreciseTimer);
+        if (_render_timer == -1) _render_timer = startTimer(40ms, Qt::PreciseTimer);
     }
     else
     {
@@ -126,4 +146,97 @@ void TestVtk::onStatusRenderer(bool renderer)
             _render_timer = -1;
         }
     }
+}
+
+void TestVtk::onVtkLeftButtonPress(vtkObject* obj)
+{
+    vtkRenderWindowInteractor* iren = vtkRenderWindowInteractor::SafeDownCast(obj);
+
+    if (iren->GetAltKey()) onStatusRenderer(false);
+
+    _my_interactor_style.OnLeftButtonDown();
+}
+
+void TestVtk::onVtkLeftButtonRelease(vtkObject*)
+{
+    onStatusRenderer(true);
+
+    _my_interactor_style.OnLeftButtonUp();
+}
+
+void TestVtk::onVtkRightButtonPress(vtkObject* obj)
+{
+    vtkRenderWindowInteractor* iren = vtkRenderWindowInteractor::SafeDownCast(obj);
+
+    if (!iren->GetAltKey())
+    {
+        auto style = vtkInteractorStyle::SafeDownCast(iren->GetInteractorStyle());
+        style->OnRightButtonDown();
+        return;
+    }
+
+    auto event_pos = iren->GetEventPosition();
+
+    vtkNew<vtkPointPicker> picker;
+    picker->Pick(event_pos[0], event_pos[1], event_pos[2], _renderer);
+
+    QMenu menu;
+
+    if (picker->GetActor())
+    {
+        menu.addAction(tr("Remove"), [this, actor = picker->GetActor()]() { this->remove_cube_at(actor); });
+    }
+    else
+    {
+        double pos[3];
+        picker->GetPickPosition(pos);
+        menu.addAction(tr("Add"), [this, x = pos[0], y = pos[1], z = pos[2]]() { this->add_cube_at(x, y, z); });
+    }
+
+    // 在鼠标位置显示
+    menu.exec(QCursor::pos());
+}
+
+void TestVtk::onVtkRightButtonRelease(vtkObject* obj)
+{
+    vtkRenderWindowInteractor* iren = vtkRenderWindowInteractor::SafeDownCast(obj);
+
+    if (!iren->GetAltKey())
+    {
+        auto style = vtkInteractorStyle::SafeDownCast(iren->GetInteractorStyle());
+        style->OnRightButtonUp();
+        return;
+    }
+}
+
+void TestVtk::onVtkMouseMove(vtkObject* obj)
+{
+    _my_interactor_style.OnMouseMove();
+}
+
+void TestVtk::add_cube_at(double x, double y, double z)
+{
+    auto source = vtkSmartPointer<vtkSphereSource>::New();
+
+    double radius = _random_sequence->GetRangeValue(0.5, 1.0);
+    _random_sequence->Next();
+
+    source->SetRadius(radius);
+    source->SetCenter(x, y, z);
+    source->SetPhiResolution(11);
+    source->SetThetaResolution(21);
+
+    auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    mapper->SetInputConnection(source->GetOutputPort());
+
+    auto actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+
+    _renderer->AddActor(actor);
+}
+
+void TestVtk::remove_cube_at(vtkActor* p)
+{
+    if (!_my_interactor_style.IsSelectedActor(p)) { _renderer->RemoveActor(p); }
+    _my_interactor_style.RemoveSelected();
 }

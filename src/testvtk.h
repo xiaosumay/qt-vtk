@@ -2,8 +2,11 @@
 #define TESTVTK_H
 
 #include <QWidget>
-#include "vtkActor.h"
+
+#include <vtkObject.h>
 #include <vtkSmartPointer.h>
+
+#include "my_interactor_style.h"
 
 /* clang-format off */
 QT_BEGIN_NAMESPACE
@@ -12,6 +15,7 @@ QT_END_NAMESPACE
 /* clang-format on */
 
 class vtkRenderer;
+class vtkEventQtSlotConnect;
 class vtkGenericOpenGLRenderWindow;
 class vtkMinimalStandardRandomSequence;
 
@@ -28,6 +32,9 @@ public:
     explicit TestVtk(QWidget *parent = nullptr);
     ~TestVtk();
 
+    void add_cube_at(double x, double y, double z);
+    void remove_cube_at(vtkActor *);
+
 protected:
     void timerEvent(QTimerEvent *event) override;
 
@@ -36,15 +43,21 @@ private slots:
     void on_delete_cube_clicked();
 
     void onStatusRenderer(bool);
+    void onVtkLeftButtonPress(vtkObject *);
+    void onVtkLeftButtonRelease(vtkObject *);
+    void onVtkRightButtonPress(vtkObject *);
+    void onVtkRightButtonRelease(vtkObject *);
+    void onVtkMouseMove(vtkObject *);
 
 private:
     Ui::TestVtk *ui;
 
     int _render_timer;
+    lingxi::vtk::MyInteractorStyle _my_interactor_style;
 
     vtkSmartPointer<vtkMinimalStandardRandomSequence> _random_sequence;
     vtkSmartPointer<vtkRenderer> _renderer;
+    vtkSmartPointer<vtkEventQtSlotConnect> _vtk_connect;
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> _render_window;
-    vtkSmartPointer<lingxi::vtk::MyInteractorStyle> _my_interactor_style;
 };
 #endif  // TESTVTK_H
