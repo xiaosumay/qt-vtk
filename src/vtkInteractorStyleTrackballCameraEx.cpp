@@ -1,42 +1,32 @@
-/** @file       my_interactor_style.cpp
+/** @file       vtkInteractorStyleTrackballCameraEx.cpp
  *  @brief
  *  @author     Mei Zhaorui
  *  @version    1.0
- *  @date       2023-07-25
+ *  @date       2023-07-26
  *  @copyright  Heli Co., Ltd. All rights reserved.
  */
-#include "my_interactor_style.h"
+#include "vtkInteractorStyleTrackballCameraEx.h"
 
-#include <vtkInteractorStyleTrackballCamera.h>
-#include <vtkRenderWindow.h>
-#include <vtkPropPicker.h>
-#include <vtkTransform.h>
-#include <vtkProperty.h>
-#include <vtkAreaPicker.h>
 #include <vtkObjectFactory.h>
-#include <vtkProp3DCollection.h>
 #include <vtkUnsignedCharArray.h>
-#include <vtkRenderWindowInteractor.h>
-#include <vtkInteractorObserver.h>
-#include <vtkRenderer.h>
-#include "vtkSmartPointer.h"
+#include <vtkPropPicker.h>
+#include "vtkActor.h"
+#include "vtkRenderWindow.h"
+#include "vtkRenderWindowInteractor.h"
+#include "vtkProp3DCollection.h"
 
-namespace lingxi::vtk
+vtkStandardNewMacro(vtkInteractorStyleTrackballCameraEx);
+
+vtkInteractorStyleTrackballCameraEx::vtkInteractorStyleTrackballCameraEx()
+    : _move_actor(false)
+    , _select_actor(false)
+    , _pixel_array(vtkSmartPointer<vtkUnsignedCharArray>::New())
 {
-
-MyInteractorStyle::MyInteractorStyle()
-{
-    _move_actor = false;
-    _start_position[0] = _start_position[1] = 0;
-    _end_position[0] = _end_position[1] = 0;
-    _select_actor = false;
-
-    _pixel_array = vtkSmartPointer<vtkUnsignedCharArray>::New();
     _pixel_array->Initialize();
     _pixel_array->SetNumberOfComponents(4);
 }
 
-void MyInteractorStyle::OnLeftButtonDown()
+void vtkInteractorStyleTrackballCameraEx::OnLeftButtonDown()
 {
     if (GetInteractor()->GetAltKey())
     {
@@ -57,50 +47,28 @@ void MyInteractorStyle::OnLeftButtonDown()
     else
     {
         auto event_pos = GetInteractor()->GetEventPosition();
-        // 注册拾取点函数
         auto picker = vtkSmartPointer<vtkPropPicker>::New();
         picker->Pick(event_pos[0], event_pos[1], 0.0, GetInteractor()->GetInteractorStyle()->GetDefaultRenderer());
 
-        auto actor = picker->GetActor();
-        if (actor)
+        _last_actor = picker->GetActor();
+        if (_last_actor)
         {
             _move_actor = true;
-            if (!_selected_actors.Contain(actor))
-            {
-                if (!GetInteractor()->GetControlKey())
-                {
-                    _selected_actors.Reset();
-                    _selected_actors.Clear();
-                }
-
-                _selected_actors.AddActor(actor);
-            }
-            else
-            {
-                if (GetInteractor()->GetControlKey())
-                {
-                    _selected_actors.RemoveActor(actor);
-                }
-            }
+            Superclass::InvokeEvent(LxEventIdsEx::kSingleActorClickedEvent, GetInteractor());
         }
-        else
-        {
-            _interactor_style->OnLeftButtonDown();
-        }
+        else { Superclass::OnLeftButtonDown(); }
     }
 }
 
-void MyInteractorStyle::OnMouseMove()
+void vtkInteractorStyleTrackballCameraEx::OnMouseMove()
 {
-    if (_move_actor)
+    if (_move_actor && _last_actor)
     {
-        double* c_pos = _selected_actors.GetCenter();
-        if (!c_pos)
-            return;
+        double* c_pos = _last_actor->GetCenter();
 
         auto renderer = GetInteractor()->GetInteractorStyle()->GetDefaultRenderer();
 
-        double disp_obj_center[3], new_pick_point[4], old_pick_point[4], motion_vector[3];
+        double disp_obj_center[3], new_pick_point[4], old_pick_point[4];
         vtkInteractorObserver::ComputeWorldToDisplay(renderer, c_pos[0], c_pos[1], c_pos[2], disp_obj_center);
 
         auto pos = GetInteractor()->GetEventPosition();
@@ -109,11 +77,11 @@ void MyInteractorStyle::OnMouseMove()
         pos = GetInteractor()->GetLastEventPosition();
         vtkInteractorObserver::ComputeDisplayToWorld(renderer, pos[0], pos[1], disp_obj_center[2], old_pick_point);
 
-        motion_vector[0] = new_pick_point[0] - old_pick_point[0];
-        motion_vector[1] = new_pick_point[1] - old_pick_point[1];
-        motion_vector[2] = new_pick_point[2] - old_pick_point[2];
+        _motion_vector[0] = new_pick_point[0] - old_pick_point[0];
+        _motion_vector[1] = new_pick_point[1] - old_pick_point[1];
+        _motion_vector[2] = new_pick_point[2] - old_pick_point[2];
 
-        _selected_actors.AddPosition(motion_vector[0], motion_vector[1], motion_vector[2]);
+        InvokeEvent(LxEventIdsEx::kActorMoveEvent, _motion_vector);
 
         GetInteractor()->GetRenderWindow()->Render();
     }
@@ -132,18 +100,12 @@ void MyInteractorStyle::OnMouseMove()
 
         RedrawRubberBand();
     }
-    else
-    {
-        _interactor_style->OnMouseMove();
-    }
+    else { Superclass ::OnMouseMove(); }
 }
 
-void MyInteractorStyle::OnLeftButtonUp()
+void vtkInteractorStyleTrackballCameraEx::OnLeftButtonUp()
 {
-    if (_move_actor)
-    {
-        _move_actor = false;
-    }
+    if (_move_actor) { _move_actor = false; }
 
     if (_select_actor)
     {
@@ -151,15 +113,10 @@ void MyInteractorStyle::OnLeftButtonUp()
         Pick();
     }
 
-    _interactor_style->OnLeftButtonUp();
+    Superclass::OnLeftButtonUp();
 }
 
-void MyInteractorStyle::RemoveSelected()
-{
-    _selected_actors.RemoveFrom(GetInteractor()->GetInteractorStyle()->GetDefaultRenderer());
-}
-
-void MyInteractorStyle::RedrawRubberBand()
+void vtkInteractorStyleTrackballCameraEx::RedrawRubberBand()
 {
     // update the rubber band on the screen
     int* size = GetInteractor()->GetRenderWindow()->GetSize();
@@ -212,7 +169,7 @@ void MyInteractorStyle::RedrawRubberBand()
     GetInteractor()->GetRenderWindow()->Frame();
 }
 
-void MyInteractorStyle::Pick()
+void vtkInteractorStyleTrackballCameraEx::Pick()
 {
     int* size = GetInteractor()->GetRenderWindow()->GetSize();
 
@@ -235,38 +192,10 @@ void MyInteractorStyle::Pick()
     if (max[1] >= size[1]) { max[1] = size[1] - 2; }
     /* clang-format on */
 
-    vtkNew<vtkAreaPicker> picker;
-    picker->AreaPick(min[0], min[1], max[0], max[1], GetInteractor()->GetInteractorStyle()->GetDefaultRenderer());
+    _selected_area[0] = min[0];
+    _selected_area[1] = min[1];
+    _selected_area[2] = max[0];
+    _selected_area[3] = max[1];
 
-    vtkProp3DCollection* props = picker->GetProp3Ds();
-    props->InitTraversal();
-
-    _selected_actors.Reset();
-    _selected_actors.Clear();
-    for (vtkIdType i = 0; i < props->GetNumberOfItems(); i++)
-    {
-        vtkActor* actor = vtkActor::SafeDownCast(props->GetNextProp3D());
-        if (!actor)
-            continue;
-
-        _selected_actors.AddActor(actor);
-    }
+    InvokeEvent(LxEventIdsEx::kSelectedAreaEvent, _selected_area);
 }
-
-bool MyInteractorStyle::IsSelectedActor(vtkActor* actor)
-{
-    return _selected_actors.Contain(actor);
-}
-
-void MyInteractorStyle::SetInteractor(vtkRenderWindowInteractor* interactor)
-{
-    _interactor = interactor;
-    _interactor_style = vtkInteractorStyle::SafeDownCast(interactor->GetInteractorStyle());
-}
-
-void MyInteractorStyle::RemoveSelected(vtkActor* p)
-{
-    _selected_actors.RemoveActor(p);
-}
-
-}  // namespace lingxi::vtk

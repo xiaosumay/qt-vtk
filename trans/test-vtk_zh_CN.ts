@@ -9,24 +9,24 @@
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/testvtk.cpp" line="188"/>
+        <location filename="../src/testvtk.cpp" line="194"/>
         <source>Clear Selected</source>
         <translation>清除选择</translation>
     </message>
     <message>
-        <location filename="../src/testvtk.cpp" line="273"/>
+        <location filename="../src/testvtk.cpp" line="279"/>
         <source>open pcl files</source>
         <translation>选择PCL文件</translation>
     </message>
     <message>
         <location filename="../src/testvtk.ui" line="45"/>
-        <location filename="../src/testvtk.cpp" line="197"/>
+        <location filename="../src/testvtk.cpp" line="203"/>
         <source>Add</source>
         <translation>添加</translation>
     </message>
     <message>
         <location filename="../src/testvtk.ui" line="64"/>
-        <location filename="../src/testvtk.cpp" line="191"/>
+        <location filename="../src/testvtk.cpp" line="197"/>
         <source>Remove</source>
         <translation>删除</translation>
     </message>

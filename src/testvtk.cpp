@@ -42,8 +42,11 @@ TestVtk::TestVtk(QWidget* parent)
     ui->setupUi(this);
     setWindowTitle(tr("Test VTK") + QStringLiteral(" " TEST_VTK_VERSION_FULL));
 
+    /*!
+     * 随机数生成器，生成小球位置时需要
+     */
     _random_sequence = vtkSmartPointer<vtkMinimalStandardRandomSequence>::New();
-    _random_sequence->SetSeed(8775070);
+    _random_sequence->SetSeed(time(NULL));
 
     _renderer = vtkSmartPointer<vtkRenderer>::New();
     _renderer->SetBackground(0.1, 0.2, 0.4);
@@ -61,6 +64,9 @@ TestVtk::TestVtk(QWidget* parent)
 
     _my_interactor_style.SetInteractor(inter);
 
+    /**!
+     * 屏蔽掉内部实现的事件回调，后期自己手动调用
+     */
     inter->RemoveObservers(vtkCommand::LeftButtonPressEvent);
     inter->RemoveObservers(vtkCommand::LeftButtonReleaseEvent);
     inter->RemoveObservers(vtkCommand::RightButtonPressEvent);
