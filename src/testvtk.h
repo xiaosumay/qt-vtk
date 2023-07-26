@@ -42,6 +42,7 @@ protected:
 private slots:
     void on_add_cube_clicked();
     void on_delete_cube_clicked();
+    void on_load_pcl_clicked();
 
     void onStatusRenderer(bool);
     void onVtkLeftButtonPress(vtkObject *);

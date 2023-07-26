@@ -1,4 +1,5 @@
 #include "testvtk.h"
+#include "qfiledialog.h"
 #include "qnamespace.h"
 #include "ui_testvtk.h"
 
@@ -16,7 +17,6 @@
 #include <vtkRenderer.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkPointData.h>
-
 #include <vtkPolyLine.h>
 #include <vtkSmartPointer.h>
 #include <vtkSphereSource.h>
@@ -26,8 +26,10 @@
 #include <vtkEventQtSlotConnect.h>
 #include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkPointPicker.h>
+#include <vtkFloatArray.h>
 
 #include "selected_actor_mgr.h"
+#include "common.h"
 
 using namespace std::chrono_literals;
 using namespace lingxi::vtk;
@@ -239,4 +241,78 @@ void TestVtk::RemoveCubeAt(vtkActor* actor)
 void TestVtk::ClearCubeAt(vtkActor* actor)
 {
     _my_interactor_style.RemoveSelected(actor);
+}
+
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+#include <pcl/io/pcd_io.h>
+
+static bool IsInvalidPoint(double x, double y, double z)
+{
+    if (!std::isfinite(x) || !std::isfinite(y) || !std::isfinite(z))
+    {
+        return true;
+    }
+    return false;
+}
+
+/**!
+ * @brief 区域耗时统计
+ */
+#define LX_TIME_ELAPSED_STATISTIC_ALWAYS(name)                                                                \
+    for (auto ___start = lingxi::vtk::GetCurrentTimestamp(); ___start != 0; [](auto& start)                   \
+         {                                                                                                    \
+             auto stop = lingxi::vtk::GetCurrentTimestamp();                                                  \
+             std::cout << #name "speed: " << ((stop - start) / (decltype(stop))1e5) << " /10ms" << std::endl; \
+             start = 0;                                                                                       \
+         }(___start))
+
+void TestVtk::on_load_pcl_clicked()
+{
+    QString file_path =
+        QFileDialog::getOpenFileName(this, tr("open pcl files"), QString(), QStringLiteral("PCL files(*.pcd)"));
+    if (file_path.isEmpty())
+        return;
+
+    auto pcl_data = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+
+    if (pcl::io::loadPCDFile<pcl::PointXYZ>(file_path.toLocal8Bit().toStdString(), *pcl_data) == -1)
+    {
+        return;
+    }
+
+    vtkSmartPointer<vtkPolyData> vtk_data = vtkSmartPointer<vtkPolyData>::New();
+    vtkSmartPointer<vtkPoints> vtk_points = vtkSmartPointer<vtkPoints>::New();
+    vtkSmartPointer<vtkCellArray> vtk_vertices = vtkSmartPointer<vtkCellArray>::New();
+    vtkSmartPointer<vtkFloatArray> vtk_scalars = vtkSmartPointer<vtkFloatArray>::New();
+
+    for (const auto& point : pcl_data->points)
+    {
+        if (IsInvalidPoint(point.x, point.y, point.z))
+            continue;
+
+        vtkIdType vtk_id = vtk_points->InsertNextPoint(point.x, point.y, point.z);
+        vtk_vertices->InsertNextCell(1);
+        vtk_vertices->InsertCellPoint(vtk_id);
+        vtk_scalars->InsertNextTuple1(point.z);
+    }
+
+    vtk_data->SetPoints(vtk_points);
+    vtk_data->SetVerts(vtk_vertices);
+    vtk_data->GetPointData()->SetScalars(vtk_scalars);
+
+    double minmax[2];
+    vtk_scalars->GetRange(minmax);
+
+    auto mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    mapper->SetScalarRange(minmax);
+    mapper->SetInputData(vtk_data);
+
+    auto actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+    actor->SetPickable(false);
+
+    _renderer->AddActor(actor);
+
+    _renderer->Render();
 }

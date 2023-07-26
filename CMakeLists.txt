@@ -30,9 +30,30 @@ else ()
     list(APPEND CMAKE_PREFIX_PATH /opt/VTK-8.2.0)
 endif ()
 
-find_package(Qt5 COMPONENTS Widgets LinguistTools REQUIRED)
+####################################################################################
+if (UNIX)
+    set(VCPKG_LOCAL_PATH $ENV{HOME}/.local/vcpkg)
+elseif (WIN32)
+    set(VCPKG_LOCAL_PATH C:/Qt/vcpkg)
+endif ()
+if (EXISTS ${VCPKG_LOCAL_PATH})
+    set(VCPKG_LIBRARY_LINKAGE "static")
+    if (UNIX)
+        set(VCPKG_TARGET_TRIPLET x64-linux CACHE STRING "x64-linux")
+    elseif (WIN32)
+        set(VCPKG_TARGET_TRIPLET x64-windows CACHE STRING "x64-windows")
+    endif ()
+
+    include(${VCPKG_LOCAL_PATH}/scripts/buildsystems/vcpkg.cmake)
+else ()
+    message(WARNING " Please setup vcpkg path at [${VCPKG_LOCAL_PATH}] ")
+endif ()
+####################################################################################
+find_package(Qt5 COMPONENTS Widgets LinguistTools Concurrent REQUIRED)
 find_package(VTK 8 CONFIG REQUIRED)
 
+set(Boost_NO_WARN_NEW_VERSIONS ON)
+find_package(PCL CONFIG REQUIRED)
 ####################################################################################
 file(GLOB_RECURSE SRC_LISTS
         CONFIGURE_DEPENDS
@@ -48,7 +69,7 @@ qt5_create_translation(QM_FILES ${CMAKE_CURRENT_LIST_DIR}/src ${TS_FILES})
 #==================================================================================#
 target_sources(${PROJECT_NAME} PRIVATE ${SRC_LISTS} ${QM_FILES})
 ####################################################################################
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets ${VTK_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Concurrent ${VTK_LIBRARIES} ${PCL_LIBRARIES})
 
 if (UNIX)
     # 设置目标的编译参数，讲警告等级设置为最高
@@ -94,7 +115,6 @@ if (UNIX)
         SetUpRPATH(${PROJECT_NAME})
     endif ()
 endif ()
-
 ########################################################################################################################
 # 通过git记录编译时所在的提交ID，方便以后排查问题
 if (NOT GIT_FOUND)
