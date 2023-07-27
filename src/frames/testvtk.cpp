@@ -2,9 +2,9 @@
 #include "qobjectdefs.h"
 #include "ui_testvtk.h"
 
-#include "common.h"
+#include "src/common/common.h"
 #include "version_internal.h"
-#include "vtkInteractorStyleTrackballCameraEx.h"
+#include "src/core/vtkInteractorStyleTrackballCameraEx.h"
 
 #include <chrono>
 
@@ -297,7 +297,11 @@ void TestVtk::on_load_pcl_clicked()
 
 void TestVtk::handlePclFile(QString file_path)
 {
+#if defined(WIN32) && (_MSC_VER > 1916L)
+    auto pcl_data = std::make_shared<pcl::PointCloud<pcl::PointXYZ>>();
+#else
     auto pcl_data = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
+#endif
 
     if (pcl::io::loadPCDFile<pcl::PointXYZ>(file_path.toLocal8Bit().toStdString(), *pcl_data) == -1)
     {

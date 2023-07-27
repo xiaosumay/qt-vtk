@@ -7,7 +7,7 @@
 #include <vtkObject.h>
 #include <vtkSmartPointer.h>
 
-#include "selected_actor_mgr.h"
+#include "src/core/selected_actor_mgr.h"
 
 /* clang-format off */
 QT_BEGIN_NAMESPACE

@@ -1,4 +1,4 @@
-#include "testvtk.h"
+#include "src/frames/testvtk.h"
 
 #include <QApplication>
 #include <QSurfaceFormat>
