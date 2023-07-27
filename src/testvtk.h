@@ -2,11 +2,12 @@
 #define TESTVTK_H
 
 #include <QWidget>
+#include <QLocale>
 
 #include <vtkObject.h>
 #include <vtkSmartPointer.h>
 
-#include "my_interactor_style.h"
+#include "selected_actor_mgr.h"
 
 /* clang-format off */
 QT_BEGIN_NAMESPACE
@@ -19,14 +20,11 @@ class vtkEventQtSlotConnect;
 class vtkGenericOpenGLRenderWindow;
 class vtkMinimalStandardRandomSequence;
 
-namespace lingxi::vtk
-{
-class MyInteractorStyle;
-}
-
 class TestVtk final : public QWidget
 {
     Q_OBJECT
+
+    typedef TestVtk Self;
 
 public:
     explicit TestVtk(QWidget *parent = nullptr);
@@ -36,6 +34,14 @@ public:
     void RemoveCubeAt(vtkActor *actor);
     void ClearCubeAt(vtkActor *actor);
 
+    void onSingleActorClicked(vtkObject *, unsigned long, void *);
+    void onActorMoveDelta(vtkObject *, unsigned long, void *);
+    void onSelectedAreaStart(vtkObject *, unsigned long, void *);
+    void onSelectedAreaEnd(vtkObject *, unsigned long, void *);
+    void onRightButtonUp(vtkObject *, unsigned long, void *);
+
+    void SetRefreshAuto(bool);
+
 protected:
     void timerEvent(QTimerEvent *event) override;
 
@@ -44,18 +50,16 @@ private slots:
     void on_delete_cube_clicked();
     void on_load_pcl_clicked();
 
-    void onStatusRenderer(bool);
-    void onVtkLeftButtonPress(vtkObject *);
-    void onVtkLeftButtonRelease(vtkObject *);
-    void onVtkRightButtonPress(vtkObject *);
-    void onVtkRightButtonRelease(vtkObject *);
-    void onVtkMouseMove(vtkObject *);
+    void onPclLoadFinished(void *p);
+
+private:
+    void handlePclFile(QString file_path);
 
 private:
     Ui::TestVtk *ui;
 
     int _render_timer;
-    lingxi::vtk::MyInteractorStyle _my_interactor_style;
+    lingxi::vtk::SelectedActorMgr _selected_actor_mgr;
 
     vtkSmartPointer<vtkMinimalStandardRandomSequence> _random_sequence;
     vtkSmartPointer<vtkRenderer> _renderer;

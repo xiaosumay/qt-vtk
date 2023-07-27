@@ -4,36 +4,36 @@
 <context>
     <name>TestVtk</name>
     <message>
-        <location filename="../src/testvtk.cpp" line="43"/>
+        <location filename="../src/testvtk.cpp" line="42"/>
         <source>Test VTK</source>
         <translation></translation>
     </message>
     <message>
-        <location filename="../src/testvtk.cpp" line="194"/>
+        <location filename="../src/testvtk.cpp" line="221"/>
         <source>Clear Selected</source>
         <translation>清除选择</translation>
     </message>
     <message>
-        <location filename="../src/testvtk.cpp" line="279"/>
+        <location filename="../src/testvtk.cpp" line="291"/>
         <source>open pcl files</source>
         <translation>选择PCL文件</translation>
     </message>
     <message>
         <location filename="../src/testvtk.ui" line="45"/>
-        <location filename="../src/testvtk.cpp" line="203"/>
+        <location filename="../src/testvtk.cpp" line="230"/>
         <source>Add</source>
         <translation>添加</translation>
     </message>
     <message>
         <location filename="../src/testvtk.ui" line="64"/>
-        <location filename="../src/testvtk.cpp" line="197"/>
+        <location filename="../src/testvtk.cpp" line="224"/>
         <source>Remove</source>
         <translation>删除</translation>
     </message>
     <message>
         <location filename="../src/testvtk.ui" line="83"/>
-        <source>Load PCL</source>
-        <translation>加载 PCL</translation>
+        <source>Load PCD</source>
+        <translation>加载 PCD</translation>
     </message>
     <message>
         <location filename="../src/testvtk.ui" line="105"/>

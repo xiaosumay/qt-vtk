@@ -90,7 +90,8 @@ int clock_gettime(clockid_t type, struct timespec* tp)
 }
 
 }  // namespace
-
+#else
+#include <time.h>
 #endif
 
 namespace lingxi::vtk

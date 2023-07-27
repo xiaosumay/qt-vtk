@@ -1,16 +1,17 @@
 #include "testvtk.h"
-#include "qfiledialog.h"
-#include "qnamespace.h"
+#include "qobjectdefs.h"
 #include "ui_testvtk.h"
 
+#include "common.h"
 #include "version_internal.h"
+#include "vtkInteractorStyleTrackballCameraEx.h"
 
 #include <chrono>
 
 #include <QFileDialog>
-#include <QDebug>
 #include <QStandardPaths>
 #include <QMenu>
+#include <QtConcurrentRun>
 
 #include <vtkActor.h>
 #include <vtkGenericOpenGLRenderWindow.h>
@@ -24,12 +25,10 @@
 #include <vtkCamera.h>
 #include <vtkAxesActor.h>
 #include <vtkEventQtSlotConnect.h>
-#include <vtkInteractorStyleTrackballCamera.h>
 #include <vtkPointPicker.h>
 #include <vtkFloatArray.h>
-
-#include "selected_actor_mgr.h"
-#include "common.h"
+#include <vtkAreaPicker.h>
+#include <vtkProp3DCollection.h>
 
 using namespace std::chrono_literals;
 using namespace lingxi::vtk;
@@ -56,29 +55,17 @@ TestVtk::TestVtk(QWidget* parent)
 
     ui->vtkWidget->SetRenderWindow(_render_window);
 
-    auto style = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
+    auto style = vtkSmartPointer<vtkInteractorStyleTrackballCameraEx>::New();
     style->SetDefaultRenderer(_renderer);
+
+    style->AddObserver(LxEventIdsEx::kSingleActorClickedEvent, this, &Self::onSingleActorClicked);
+    style->AddObserver(LxEventIdsEx::kActorMoveDeltaEvent, this, &Self::onActorMoveDelta);
+    style->AddObserver(LxEventIdsEx::kSelectedAreaStartEvent, this, &Self::onSelectedAreaStart);
+    style->AddObserver(LxEventIdsEx::kSelectedAreaEndEvent, this, &Self::onSelectedAreaEnd);
+    style->AddObserver(LxEventIdsEx::kRightButtonUpEvent, this, &Self::onRightButtonUp);
 
     auto inter = ui->vtkWidget->GetInteractor();
     inter->SetInteractorStyle(style);
-
-    _my_interactor_style.SetInteractor(inter);
-
-    /**!
-     * 屏蔽掉内部实现的事件回调，后期自己手动调用
-     */
-    inter->RemoveObservers(vtkCommand::LeftButtonPressEvent);
-    inter->RemoveObservers(vtkCommand::LeftButtonReleaseEvent);
-    inter->RemoveObservers(vtkCommand::RightButtonPressEvent);
-    inter->RemoveObservers(vtkCommand::RightButtonReleaseEvent);
-    inter->RemoveObservers(vtkCommand::MouseMoveEvent);
-
-    _vtk_connect = vtkSmartPointer<vtkEventQtSlotConnect>::New();
-    _vtk_connect->Connect(inter, vtkCommand::LeftButtonPressEvent, this, SLOT(onVtkLeftButtonPress(vtkObject*)));
-    _vtk_connect->Connect(inter, vtkCommand::LeftButtonReleaseEvent, this, SLOT(onVtkLeftButtonRelease(vtkObject*)));
-    _vtk_connect->Connect(inter, vtkCommand::RightButtonPressEvent, this, SLOT(onVtkRightButtonPress(vtkObject*)));
-    _vtk_connect->Connect(inter, vtkCommand::RightButtonReleaseEvent, this, SLOT(onVtkRightButtonRelease(vtkObject*)));
-    _vtk_connect->Connect(inter, vtkCommand::MouseMoveEvent, this, SLOT(onVtkMouseMove(vtkObject*)));
 
     auto axes_actor = vtkSmartPointer<vtkAxesActor>::New();
     axes_actor->SetTotalLength(10, 10, 10);
@@ -87,12 +74,12 @@ TestVtk::TestVtk(QWidget* parent)
 
     _renderer->AddActor(axes_actor);
 
-    onStatusRenderer(true);
+    SetRefreshAuto(true);
 }
 
 TestVtk::~TestVtk()
 {
-    onStatusRenderer(false);
+    SetRefreshAuto(false);
 
     delete ui;
 }
@@ -124,13 +111,11 @@ void TestVtk::on_add_cube_clicked()
     actor->SetMapper(mapper);
 
     _renderer->AddActor(actor);
-
-    _renderer->ResetCamera();
 }
 
 void TestVtk::on_delete_cube_clicked()
 {
-    _my_interactor_style.RemoveSelected();
+    _selected_actor_mgr.RemoveFrom(_renderer);
 }
 
 void TestVtk::timerEvent(QTimerEvent* event)
@@ -141,12 +126,11 @@ void TestVtk::timerEvent(QTimerEvent* event)
     }
 }
 
-void TestVtk::onStatusRenderer(bool renderer)
+void TestVtk::SetRefreshAuto(bool renderer)
 {
     if (renderer)
     {
-        if (_render_timer == -1)
-            _render_timer = startTimer(40ms, Qt::PreciseTimer);
+        if (_render_timer == -1) _render_timer = startTimer(40ms);
     }
     else
     {
@@ -158,26 +142,69 @@ void TestVtk::onStatusRenderer(bool renderer)
     }
 }
 
-void TestVtk::onVtkLeftButtonPress(vtkObject* obj)
+void TestVtk::onSingleActorClicked(vtkObject* obj, unsigned long, void* clientData)
 {
-    vtkRenderWindowInteractor* iren = vtkRenderWindowInteractor::SafeDownCast(obj);
+    auto style = vtkInteractorStyleTrackballCameraEx::SafeDownCast(obj);
 
-    if (iren->GetAltKey())
-        onStatusRenderer(false);
+    auto actor = (vtkActor*)clientData;
 
-    _my_interactor_style.OnLeftButtonDown();
+    if (!_selected_actor_mgr.Contain(actor))
+    {
+        if (!style->GetInteractor()->GetControlKey())
+        {
+            _selected_actor_mgr.Reset();
+            _selected_actor_mgr.Clear();
+        }
+
+        _selected_actor_mgr.AddActor(actor);
+    }
+    else
+    {
+        if (style->GetInteractor()->GetControlKey())
+        {
+            _selected_actor_mgr.RemoveActor(actor);
+        }
+    }
 }
 
-void TestVtk::onVtkLeftButtonRelease(vtkObject*)
+void TestVtk::onActorMoveDelta(vtkObject*, unsigned long, void* clientData)
 {
-    onStatusRenderer(true);
+    auto delta = (double*)clientData;
 
-    _my_interactor_style.OnLeftButtonUp();
+    _selected_actor_mgr.AddPosition(delta[0], delta[1], delta[2]);
 }
 
-void TestVtk::onVtkRightButtonPress(vtkObject* obj)
+void TestVtk::onSelectedAreaStart(vtkObject*, unsigned long, void*)
 {
-    vtkRenderWindowInteractor* iren = vtkRenderWindowInteractor::SafeDownCast(obj);
+    SetRefreshAuto(false);
+}
+
+void TestVtk::onSelectedAreaEnd(vtkObject*, unsigned long, void* clientData)
+{
+    auto area = (int*)clientData;
+
+    vtkNew<vtkAreaPicker> picker;
+    picker->AreaPick(area[0], area[1], area[2], area[3], _renderer);
+
+    vtkProp3DCollection* props = picker->GetProp3Ds();
+    props->InitTraversal();
+
+    _selected_actor_mgr.Reset();
+    _selected_actor_mgr.Clear();
+    for (vtkIdType i = 0; i < props->GetNumberOfItems(); i++)
+    {
+        vtkActor* actor = vtkActor::SafeDownCast(props->GetNextProp3D());
+        if (!actor) continue;
+
+        _selected_actor_mgr.AddActor(actor);
+    }
+
+    SetRefreshAuto(true);
+}
+
+void TestVtk::onRightButtonUp(vtkObject*, unsigned long, void* clientData)
+{
+    auto iren = (vtkRenderWindowInteractor*)clientData;
 
     auto event_pos = iren->GetEventPosition();
 
@@ -189,7 +216,7 @@ void TestVtk::onVtkRightButtonPress(vtkObject* obj)
     auto cur_actor = picker->GetActor();
     if (cur_actor)
     {
-        if (_my_interactor_style.IsSelectedActor(cur_actor))
+        if (_selected_actor_mgr.Contain(cur_actor))
         {
             menu.addAction(tr("Clear Selected"), [this, cur_actor]() { this->ClearCubeAt(cur_actor); });
         }
@@ -205,13 +232,6 @@ void TestVtk::onVtkRightButtonPress(vtkObject* obj)
 
     // 在鼠标位置显示
     menu.exec(QCursor::pos());
-}
-
-void TestVtk::onVtkRightButtonRelease(vtkObject*) {}
-
-void TestVtk::onVtkMouseMove(vtkObject* obj)
-{
-    _my_interactor_style.OnMouseMove();
 }
 
 void TestVtk::AddCubeAt(double x, double y, double z)
@@ -237,16 +257,19 @@ void TestVtk::AddCubeAt(double x, double y, double z)
 
 void TestVtk::RemoveCubeAt(vtkActor* actor)
 {
-    if (!_my_interactor_style.IsSelectedActor(actor))
+    if (!_selected_actor_mgr.Contain(actor))
     {
         _renderer->RemoveActor(actor);
     }
-    _my_interactor_style.RemoveSelected();
+    else
+    {
+        _selected_actor_mgr.RemoveFrom(_renderer);
+    }
 }
 
 void TestVtk::ClearCubeAt(vtkActor* actor)
 {
-    _my_interactor_style.RemoveSelected(actor);
+    _selected_actor_mgr.RemoveActor(actor);
 }
 
 #include <pcl/point_types.h>
@@ -262,24 +285,18 @@ static bool IsInvalidPoint(double x, double y, double z)
     return false;
 }
 
-/**!
- * @brief 区域耗时统计
- */
-#define LX_TIME_ELAPSED_STATISTIC_ALWAYS(name)                                                                \
-    for (auto ___start = lingxi::vtk::GetCurrentTimestamp(); ___start != 0; [](auto& start)                   \
-         {                                                                                                    \
-             auto stop = lingxi::vtk::GetCurrentTimestamp();                                                  \
-             std::cout << #name "speed: " << ((stop - start) / (decltype(stop))1e5) << " /10ms" << std::endl; \
-             start = 0;                                                                                       \
-         }(___start))
-
 void TestVtk::on_load_pcl_clicked()
 {
     QString file_path =
         QFileDialog::getOpenFileName(this, tr("open pcl files"), QString(), QStringLiteral("PCL files(*.pcd)"));
-    if (file_path.isEmpty())
-        return;
+    if (file_path.isEmpty()) return;
 
+    // 异步执行，避免卡界面
+    QtConcurrent::run(this, &Self::handlePclFile, file_path);
+}
+
+void TestVtk::handlePclFile(QString file_path)
+{
     auto pcl_data = pcl::PointCloud<pcl::PointXYZ>::Ptr(new pcl::PointCloud<pcl::PointXYZ>);
 
     if (pcl::io::loadPCDFile<pcl::PointXYZ>(file_path.toLocal8Bit().toStdString(), *pcl_data) == -1)
@@ -294,8 +311,7 @@ void TestVtk::on_load_pcl_clicked()
 
     for (const auto& point : pcl_data->points)
     {
-        if (IsInvalidPoint(point.x, point.y, point.z))
-            continue;
+        if (IsInvalidPoint(point.x, point.y, point.z)) continue;
 
         vtkIdType vtk_id = vtk_points->InsertNextPoint(point.x, point.y, point.z);
         vtk_vertices->InsertNextCell(1);
@@ -314,11 +330,19 @@ void TestVtk::on_load_pcl_clicked()
     mapper->SetScalarRange(minmax);
     mapper->SetInputData(vtk_data);
 
-    auto actor = vtkSmartPointer<vtkActor>::New();
+    // 不能使用智能指针，线程退出后会被销毁
+    auto actor = vtkActor::New();
     actor->SetMapper(mapper);
     actor->SetPickable(false);
 
-    _renderer->AddActor(actor);
+    QMetaObject::invokeMethod(this, "onPclLoadFinished", Qt::QueuedConnection, Q_ARG(void*, actor));
+}
 
+void TestVtk::onPclLoadFinished(void* p)
+{
+    // 捕获指针，并重新赋值给智能指针
+    auto actor = vtkSmartPointer<vtkActor>((vtkActor*)p);
+
+    _renderer->AddActor(actor);
     _renderer->Render();
 }

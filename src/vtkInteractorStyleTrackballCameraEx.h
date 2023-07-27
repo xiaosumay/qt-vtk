@@ -8,20 +8,24 @@
 #ifndef __TEST_VTK_VTKINTERACTORSTYLETRACKBALLCAMERAEX_H__
 #define __TEST_VTK_VTKINTERACTORSTYLETRACKBALLCAMERAEX_H__
 
+#include <memory>
+
 #include <vtkInteractorStyleTrackballCamera.h>
-#include <vtkSmartPointer.h>
 #include <vtkCommand.h>
 
-class vtkUnsignedCharArray;
-
-enum LxEventIdsEx
+struct LxEventIdsEx
 {
-    kSelectedAreaEvent = vtkCommand::UserEvent + 1,
-    kActorMoveEvent,
-    kSingleActorClickedEvent,
+    enum
+    {
+        kSelectedAreaStartEvent = vtkCommand::UserEvent + 1,
+        kSelectedAreaEndEvent,
+        kActorMoveDeltaEvent,
+        kSingleActorClickedEvent,
+        kRightButtonUpEvent,
+    };
 };
 
-class vtkInteractorStyleTrackballCameraEx : public vtkInteractorStyleTrackballCamera
+class vtkInteractorStyleTrackballCameraEx final : public vtkInteractorStyleTrackballCamera
 {
     vtkTypeMacro(vtkInteractorStyleTrackballCameraEx, vtkInteractorStyleTrackballCamera);
 
@@ -30,25 +34,21 @@ public:
 
     static vtkInteractorStyleTrackballCameraEx *New();
 
-    void OnLeftButtonDown() override;
-    void OnMouseMove() override;
-    void OnLeftButtonUp() override;
+    void OnLeftButtonDown() final;
+    void OnLeftButtonUp() final;
+
+    void OnMouseMove() final;
+
+    void OnRightButtonDown() final;
+    void OnRightButtonUp() final;
 
 private:
-    void Pick();
-    void RedrawRubberBand();
+    void pick();
+    void redrawRubberBand();
 
 private:
-    bool _move_actor;
-    bool _select_actor;
-
-    int _start_position[2]{};
-    int _end_position[2]{};
-
-    vtkActor *_last_actor{};
-    double _motion_vector[3]{};
-    int _selected_area[4]{};
-    vtkSmartPointer<vtkUnsignedCharArray> _pixel_array;
+    struct DataImpl;
+    std::unique_ptr<DataImpl> _self;
 };
 
 #endif  // __TEST_VTK_VTKINTERACTORSTYLETRACKBALLCAMERAEX_H__

@@ -54,12 +54,7 @@ int main(int argc, char *argv[])
         bool load = translator.load(QStringLiteral("test-vtk_zh_CN.qm"));
         if (load)
         {
-            qDebug() << QStringLiteral("load success");
             QApplication::installTranslator(&translator);
-        }
-        else
-        {
-            qDebug() << QStringLiteral("load failed!");
         }
     }
 

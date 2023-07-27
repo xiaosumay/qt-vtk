@@ -80,7 +80,7 @@
             </font>
            </property>
            <property name="text">
-            <string>Load PCL</string>
+            <string>Load PCD</string>
            </property>
           </widget>
          </item>

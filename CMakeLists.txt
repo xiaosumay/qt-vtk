@@ -50,10 +50,10 @@ else ()
 endif ()
 ####################################################################################
 find_package(Qt5 COMPONENTS Widgets LinguistTools Concurrent REQUIRED)
-find_package(VTK 8 CONFIG REQUIRED)
+find_package(VTK 8.2.0 REQUIRED)
 
 set(Boost_NO_WARN_NEW_VERSIONS ON)
-find_package(PCL CONFIG REQUIRED)
+find_package(PCL REQUIRED)
 ####################################################################################
 file(GLOB_RECURSE SRC_LISTS
         CONFIGURE_DEPENDS
@@ -62,14 +62,20 @@ file(GLOB_RECURSE SRC_LISTS
         src/*.ui)
 source_group(TREE ${CMAKE_CURRENT_LIST_DIR} FILES ${SRC_LISTS})
 #==================================================================================#
-file(GLOB_RECURSE TS_FILES
-        trans/*.ts)
+file(GLOB_RECURSE TS_FILES trans/*.ts)
 source_group("ts Files" FILES ${TS_FILES})
 qt5_create_translation(QM_FILES ${CMAKE_CURRENT_LIST_DIR}/src ${TS_FILES})
 #==================================================================================#
 target_sources(${PROJECT_NAME} PRIVATE ${SRC_LISTS} ${QM_FILES})
 ####################################################################################
-target_link_libraries(${PROJECT_NAME} PRIVATE Qt5::Widgets Qt5::Concurrent ${VTK_LIBRARIES} ${PCL_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE
+        Qt5::Core
+        Qt5::Gui
+        Qt5::Widgets
+        Qt5::Concurrent
+        vtkRenderingVolumeOpenGL2
+        vtkGUISupportQt
+        ${VTK_LIBRARIES} ${PCL_LIBRARIES})
 
 if (UNIX)
     # 设置目标的编译参数，讲警告等级设置为最高
@@ -104,6 +110,10 @@ if (UNIX)
         )
 
         get_target_property(OLD_LINK_FLAGS ${target_name} LINK_FLAGS)
+        if ("${OLD_LINK_FLAGS}" STREQUAL "OLD_LINK_FLAGS-NOTFOUND")
+            unset(OLD_LINK_FLAGS)
+        endif ()
+
         if ("${PROJECT_TYPE}" STREQUAL "EXECUTABLE")
             set_target_properties(${target_name} PROPERTIES LINK_FLAGS "${OLD_LINK_FLAGS} -Wl,-rpath,\$ORIGIN:\$ORIGIN/../lib ")
         else ()
