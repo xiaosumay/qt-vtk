@@ -255,10 +255,30 @@ void lxInteractorStyle::OnChar()
 
     switch (rwi->GetKeyCode())
     {
+    case 'p':
+    case 'P':
+    {
+        FindPokedRenderer(rwi->GetEventPosition()[0], rwi->GetEventPosition()[1]);
+        if (CurrentRenderer == nullptr) return;
+
+        auto camera = CurrentRenderer->GetActiveCamera();
+
+        camera->SetParallelProjection(!camera->GetParallelProjection());
+    }
+    break;
     case 'r':
     case 'R':
+    {
         Superclass::OnChar();
-        break;
+
+        FindPokedRenderer(rwi->GetEventPosition()[0], rwi->GetEventPosition()[1]);
+        if (CurrentRenderer == nullptr) return;
+
+        auto camera = CurrentRenderer->GetActiveCamera();
+
+        camera->ParallelProjectionOff();
+    }
+    break;
     }
 }
 
