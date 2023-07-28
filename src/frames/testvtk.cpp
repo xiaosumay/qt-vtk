@@ -4,7 +4,7 @@
 
 #include "src/common/common.h"
 #include "version_internal.h"
-#include "src/core/vtkInteractorStyleTrackballCameraEx.h"
+#include "src/core/lxInteractorStyle.h"
 
 #include <chrono>
 
@@ -55,13 +55,14 @@ TestVtk::TestVtk(QWidget* parent)
 
     ui->vtkWidget->SetRenderWindow(_render_window);
 
-    auto style = vtkSmartPointer<vtkInteractorStyleTrackballCameraEx>::New();
+    auto style = vtkSmartPointer<lxInteractorStyle>::New();
     style->SetDefaultRenderer(_renderer);
+    style->SetTimerDuration(40);
+    style->SetUseTimers(true);
 
     style->AddObserver(LxEventIdsEx::kSingleActorClickedEvent, this, &Self::onSingleActorClicked);
     style->AddObserver(LxEventIdsEx::kActorMoveDeltaEvent, this, &Self::onActorMoveDelta);
-    style->AddObserver(LxEventIdsEx::kSelectedAreaStartEvent, this, &Self::onSelectedAreaStart);
-    style->AddObserver(LxEventIdsEx::kSelectedAreaEndEvent, this, &Self::onSelectedAreaEnd);
+    style->AddObserver(LxEventIdsEx::kSelectedAreaEvent, this, &Self::onSelectedArea);
     style->AddObserver(LxEventIdsEx::kRightButtonUpEvent, this, &Self::onRightButtonUp);
 
     auto inter = ui->vtkWidget->GetInteractor();
@@ -74,13 +75,11 @@ TestVtk::TestVtk(QWidget* parent)
 
     _renderer->AddActor(axes_actor);
 
-    SetRefreshAuto(true);
+    style->StartAnimate();
 }
 
 TestVtk::~TestVtk()
 {
-    SetRefreshAuto(false);
-
     delete ui;
 }
 
@@ -118,33 +117,9 @@ void TestVtk::on_delete_cube_clicked()
     _selected_actor_mgr.RemoveFrom(_renderer);
 }
 
-void TestVtk::timerEvent(QTimerEvent* event)
-{
-    if (event->timerId() == _render_timer)
-    {
-        ui->vtkWidget->GetRenderWindow()->Render();
-    }
-}
-
-void TestVtk::SetRefreshAuto(bool renderer)
-{
-    if (renderer)
-    {
-        if (_render_timer == -1) _render_timer = startTimer(40ms);
-    }
-    else
-    {
-        if (_render_timer != -1)
-        {
-            killTimer(_render_timer);
-            _render_timer = -1;
-        }
-    }
-}
-
 void TestVtk::onSingleActorClicked(vtkObject* obj, unsigned long, void* clientData)
 {
-    auto style = vtkInteractorStyleTrackballCameraEx::SafeDownCast(obj);
+    auto style = lxInteractorStyle::SafeDownCast(obj);
 
     auto actor = (vtkActor*)clientData;
 
@@ -174,12 +149,7 @@ void TestVtk::onActorMoveDelta(vtkObject*, unsigned long, void* clientData)
     _selected_actor_mgr.AddPosition(delta[0], delta[1], delta[2]);
 }
 
-void TestVtk::onSelectedAreaStart(vtkObject*, unsigned long, void*)
-{
-    SetRefreshAuto(false);
-}
-
-void TestVtk::onSelectedAreaEnd(vtkObject*, unsigned long, void* clientData)
+void TestVtk::onSelectedArea(vtkObject*, unsigned long, void* clientData)
 {
     auto area = (int*)clientData;
 
@@ -198,8 +168,6 @@ void TestVtk::onSelectedAreaEnd(vtkObject*, unsigned long, void* clientData)
 
         _selected_actor_mgr.AddActor(actor);
     }
-
-    SetRefreshAuto(true);
 }
 
 void TestVtk::onRightButtonUp(vtkObject*, unsigned long, void* clientData)

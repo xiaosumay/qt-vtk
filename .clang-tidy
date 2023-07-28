@@ -72,7 +72,8 @@ readability-*,
 -readability-redundant-access-specifiers,
 -readability-function-cognitive-complexity,
 -readability-implicit-bool-conversion,
--readability-container-contains'
+-readability-container-contains,
+-readability-avoid-unconditional-preprocessor-if'
 
 #  lower_case,
 #  UPPER_CASE,

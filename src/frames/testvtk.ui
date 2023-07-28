@@ -102,15 +102,7 @@
        <item>
         <widget class="QLabel" name="label">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;
-&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;左键，3D旋转&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;右键，增减菜单&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;SHIFT+左键，相机平移&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;ALT+左键，选择框&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;CTRL+左键，单点选择&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;滚轮，放大缩小&lt;/span&gt;&lt;/p&gt;
-&lt;p&gt;
-&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;左键，相机平移&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;右键，增减菜单&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;SHIFT+左键，3D旋转&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;ALT+左键，选择框&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;CTRL+左键，单点选择&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;滚轮，放大缩小&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>

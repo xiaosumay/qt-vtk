@@ -93,7 +93,7 @@ if (UNIX)
             -Wdouble-promotion       # 禁止隐形float提升为double
             -Wno-return-local-addr   # 返回局部地址
             -Wswitch                 # switch覆盖
-            )
+    )
 
     target_link_options(${PROJECT_NAME} PRIVATE -Wl,--gc-sections)
 

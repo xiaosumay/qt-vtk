@@ -36,14 +36,8 @@ public:
 
     void onSingleActorClicked(vtkObject *, unsigned long, void *);
     void onActorMoveDelta(vtkObject *, unsigned long, void *);
-    void onSelectedAreaStart(vtkObject *, unsigned long, void *);
-    void onSelectedAreaEnd(vtkObject *, unsigned long, void *);
+    void onSelectedArea(vtkObject *, unsigned long, void *);
     void onRightButtonUp(vtkObject *, unsigned long, void *);
-
-    void SetRefreshAuto(bool);
-
-protected:
-    void timerEvent(QTimerEvent *event) override;
 
 private slots:
     void on_add_cube_clicked();
