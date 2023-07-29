@@ -107,14 +107,7 @@ void lxInteractorStyle::OnLeftButtonDown()
     GrabFocus(EventCallbackCommand);
     if (Interactor->GetShiftKey())
     {
-        if (Interactor->GetControlKey())
-        {
-            StartDolly();
-        }
-        else
-        {
-            StartRotate();
-        }
+        StartRotate();
     }
     else if (Interactor->GetAltKey())
     {
