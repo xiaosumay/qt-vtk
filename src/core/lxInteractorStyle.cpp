@@ -27,11 +27,6 @@ enum
     VTKIS_ACTORMOVING
 };
 
-static bool IsChar(char src, char key)
-{
-    return ::tolower(src) == key;
-}
-
 }  // namespace
 
 struct lxInteractorStyle::DataImpl
