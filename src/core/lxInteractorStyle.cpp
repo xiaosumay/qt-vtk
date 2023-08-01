@@ -595,7 +595,7 @@ bool lxInteractorStyle::IsOnActor()
 {
     auto event_pos = GetInteractor()->GetEventPosition();
 
-    _self->prop_picker->Pick(event_pos[0], event_pos[1], 0.0, GetDefaultRenderer());
+    _self->prop_picker->Pick(event_pos[0], event_pos[1], 0.0, CurrentRenderer);
     _self->last_actor = _self->prop_picker->GetActor();
 
     return _self->last_actor;
